@@ -15,7 +15,8 @@ public class BlobSiteSettingsStoreTests
         var container = Azurite.NewContainer();
         var store = new BlobSiteSettingsStore(container);
         var draft = WithBanner("First");
-        await store.SaveDraftAsync(draft);
+        await store.SaveDraftAsync("jane.editor@gov.bc.ca", draft, baseLiveETag: null);
+        Assert.Null((await store.GetDraftAsync("jane.editor@gov.bc.ca"))!.BaseLiveETag);
 
         var result = await store.PublishAsync(draft, expectedLiveETag: null, "jane.editor@gov.bc.ca", "Launch");
 
@@ -26,7 +27,7 @@ public class BlobSiteSettingsStoreTests
         Assert.Equal("First", live.Settings.Banner.Message);
         Assert.Equal("jane.editor@gov.bc.ca", live.Settings.PublishedBy);
         Assert.Equal(result.Live!.ETag, live.ETag);
-        Assert.Null(await store.GetDraftAsync());
+        Assert.Null(await store.GetDraftAsync("jane.editor@gov.bc.ca"));
         var history = Assert.Single(await store.ListHistoryAsync());
         Assert.Equal(1, history.Revision);
         Assert.Equal("Launch", history.Note);
@@ -80,6 +81,34 @@ public class BlobSiteSettingsStoreTests
         Assert.Equal(PublishStatus.Published, first.Status);
         Assert.Equal(PublishStatus.Conflict, second.Status);
         Assert.Equal("A", (await store.GetLiveAsync())!.Settings.Banner.Message);
+    }
+
+    [AzuriteFact]
+    public async Task Draft_remembers_the_live_version_it_started_from()
+    {
+        var store = new BlobSiteSettingsStore(Azurite.NewContainer());
+        var live = (await store.PublishAsync(WithBanner("Live"), null, "a", null)).Live!;
+
+        await store.SaveDraftAsync("jane", WithBanner("Work in progress"), live.ETag);
+
+        var draft = await store.GetDraftAsync("jane");
+        Assert.Equal("Work in progress", draft!.Settings.Banner.Message);
+        Assert.Equal(live.ETag, draft.BaseLiveETag);
+    }
+
+    [AzuriteFact]
+    public async Task Each_editor_has_their_own_draft_and_another_editors_publish_leaves_it_alone()
+    {
+        var store = new BlobSiteSettingsStore(Azurite.NewContainer());
+        var live = (await store.PublishAsync(WithBanner("Live"), null, "setup", null)).Live!;
+        await store.SaveDraftAsync("jane@gov.bc.ca", WithBanner("Jane's draft"), live.ETag);
+        await store.SaveDraftAsync("sam@gov.bc.ca", WithBanner("Sam's draft"), live.ETag);
+
+        await store.PublishAsync(WithBanner("Sam's draft"), live.ETag, "sam@gov.bc.ca", null);
+
+        Assert.Null(await store.GetDraftAsync("sam@gov.bc.ca"));
+        Assert.Equal("Jane's draft", (await store.GetDraftAsync("jane@gov.bc.ca"))!.Settings.Banner.Message);
+        Assert.Equal("Jane's draft", (await store.GetDraftAsync("JANE@gov.bc.ca "))!.Settings.Banner.Message); // same person, however the name is cased
     }
 
     [AzuriteFact]

@@ -1,0 +1,193 @@
+@page
+@model BannerModel
+@{
+    ViewData["Title"] = "Site banner";
+    var modes = new[]
+    {
+        (Value: "off", Label: "Off", Color: "#8A9099"),
+        (Value: "info", Label: "Information", Color: Model.Colors.BannerInfo),
+        (Value: "emergency", Label: "Emergency", Color: Model.Colors.BannerEmergency),
+    };
+    var previewColor = Model.Input.Mode == "emergency" ? Model.Colors.BannerEmergency : Model.Colors.BannerInfo;
+}
+
+<h1>Site banner</h1>
+<p class="text-secondary">Shown across the top of every page. Changes go live within a minute of publishing.</p>
+
+@if (Model.StatusMessage is not null)
+{
+    <div class="alert alert-info" role="status">@Model.StatusMessage</div>
+}
+
+@if (Model.ConflictLive is not null)
+{
+    <div class="alert alert-warning" role="alert">
+        <h2 class="h5">Someone published while you were editing</h2>
+        <p class="mb-2">
+            Revision @Model.ConflictLive.Revision was published by @Model.ConflictLive.PublishedBy
+            on @PacificTime.Format(Model.ConflictLive.PublishedAt). Nothing of yours was published, and your draft is saved.
+        </p>
+        @if (Model.ConflictSections.Count > 0)
+        {
+            <p class="mb-2">Your draft differs from it in: <strong>@string.Join(", ", Model.ConflictSections)</strong>.</p>
+        }
+        <p class="mb-2">Their banner: <q>@(Model.ConflictLive.Banner.Enabled ? Model.ConflictLive.Banner.Message : "Off")</q></p>
+        <form method="post" class="d-inline">
+            @Html.HiddenFor(m => m.Input.Mode)
+            @Html.HiddenFor(m => m.Input.Message)
+            @Html.HiddenFor(m => m.Input.Dismissible)
+            @Html.HiddenFor(m => m.Input.StartsAt)
+            @Html.HiddenFor(m => m.Input.EndsAt)
+            @for (var i = 0; i < Model.Input.Links.Count; i++)
+            {
+                @Html.HiddenFor(m => m.Input.Links[i].Text)
+                @Html.HiddenFor(m => m.Input.Links[i].Url)
+            }
+            <button type="submit" asp-page-handler="Rebase" class="btn btn-warning">Keep my banner, on top of their version</button>
+        </form>
+        <form method="post" class="d-inline">
+            <button type="submit" asp-page-handler="Discard" class="btn btn-outline-secondary">Discard mine, use theirs</button>
+        </form>
+    </div>
+}
+
+@if (Model.OtherSectionErrors.Any())
+{
+    <div class="alert alert-danger" role="alert">
+        <p class="mb-1">Other parts of the draft have problems that block publishing:</p>
+        <ul class="mb-0">
+            @foreach (var error in Model.OtherSectionErrors)
+            {
+                <li><code>@error.Field</code>: @error.Message</li>
+            }
+        </ul>
+    </div>
+}
+
+<section aria-labelledby="preview-heading" class="card mb-4">
+    <div class="card-header small fw-bold text-secondary" id="preview-heading">Preview</div>
+    <div id="banner-preview" class="banner-preview" style="background-color: @previewColor" hidden="@(Model.Input.Mode == "off")"
+         data-info-color="@Model.Colors.BannerInfo" data-emergency-color="@Model.Colors.BannerEmergency">
+        <span id="banner-preview-text">@Model.Input.Message</span>
+        @foreach (var link in Model.Input.Links.Where(l => !string.IsNullOrWhiteSpace(l.Text)))
+        {
+            <span class="banner-preview-link">@link.Text</span>
+        }
+    </div>
+    <p id="banner-preview-off" class="p-3 mb-0 fst-italic text-secondary" hidden="@(Model.Input.Mode != "off")">No banner is shown.</p>
+</section>
+
+<form method="post" novalidate>
+    <input type="hidden" asp-for="BaseETag" />
+
+    <fieldset class="mb-4">
+        <legend class="h5">Banner type</legend>
+        <div class="d-flex flex-wrap gap-2" id="banner-mode">
+            @foreach (var mode in modes)
+            {
+                <input type="radio" class="btn-check" name="Input.Mode" id="mode-@mode.Value" value="@mode.Value" checked="@(Model.Input.Mode == mode.Value)" />
+                <label class="btn btn-outline-primary banner-mode" for="mode-@mode.Value">
+                    <span class="banner-mode-dot" style="background-color: @mode.Color" aria-hidden="true"></span>@mode.Label
+                </label>
+            }
+        </div>
+        @foreach (var message in Model.ErrorsFor("banner.style"))
+        {
+            <div class="text-danger mt-1">@message</div>
+        }
+        <p class="form-text">Information is blue. Emergency is red, for things like wildfire or flood declarations.</p>
+    </fieldset>
+
+    <div class="mb-4">
+        <label asp-for="Input.Message" class="form-label fw-bold">Message</label>
+        <textarea asp-for="Input.Message" class="form-control @(Model.ErrorsFor("banner.message").Any() ? "is-invalid" : "")" rows="3"
+                  maxlength="@BannerSettings.MaxMessageLength" aria-describedby="message-help message-count"></textarea>
+        @foreach (var message in Model.ErrorsFor("banner.message"))
+        {
+            <div class="invalid-feedback">@message</div>
+        }
+        <div class="d-flex justify-content-between form-text">
+            <span id="message-help">Plain text. Add links below instead of pasting HTML.</span>
+            <span id="message-count">@Model.Input.Message.Length / @BannerSettings.MaxMessageLength</span>
+        </div>
+    </div>
+
+    <fieldset class="mb-4">
+        <legend class="h6 fw-bold">Links in the banner <span class="fw-normal text-secondary">(optional)</span></legend>
+        @for (var i = 0; i < Model.Input.Links.Count; i++)
+        {
+            var textErrors = Model.ErrorsFor($"banner.links[{i}].text").ToList();
+            var urlErrors = Model.ErrorsFor($"banner.links[{i}].url").ToList();
+            <div class="row g-2 align-items-start mb-2">
+                <div class="col-md-4">
+                    <label asp-for="Input.Links[i].Text" class="form-label small">Link text</label>
+                    <input asp-for="Input.Links[i].Text" class="form-control @(textErrors.Any() ? "is-invalid" : "")" />
+                    @foreach (var message in textErrors) { <div class="invalid-feedback">@message</div> }
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Input.Links[i].Url" class="form-label small">Web address</label>
+                    <input asp-for="Input.Links[i].Url" type="url" class="form-control @(urlErrors.Any() ? "is-invalid" : "")" />
+                    @foreach (var message in urlErrors) { <div class="invalid-feedback">@message</div> }
+                </div>
+                <div class="col-md-2 d-flex align-items-end" style="min-height: 4.1rem">
+                    <button type="submit" asp-page-handler="RemoveLink" asp-route-index="@i" class="btn btn-outline-secondary w-100">Remove</button>
+                </div>
+            </div>
+        }
+        <button type="submit" asp-page-handler="AddLink" class="btn btn-outline-primary">+ Add a link</button>
+    </fieldset>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-6">
+            <label asp-for="Input.StartsAt" class="form-label fw-bold">Show from</label>
+            <div class="form-text mt-0 mb-1">Pacific time. Blank = as soon as it's published.</div>
+            <input asp-for="Input.StartsAt" type="datetime-local" class="form-control" />
+        </div>
+        <div class="col-md-6">
+            <label asp-for="Input.EndsAt" class="form-label fw-bold">Hide after</label>
+            <div class="form-text mt-0 mb-1">Pacific time. Blank = until someone turns it off.</div>
+            <input asp-for="Input.EndsAt" type="datetime-local" class="form-control @(Model.ErrorsFor("banner.endsAt").Any() ? "is-invalid" : "")" />
+            @foreach (var message in Model.ErrorsFor("banner.endsAt"))
+            {
+                <div class="invalid-feedback">@message</div>
+            }
+        </div>
+    </div>
+
+    <div class="form-check mb-4">
+        <input asp-for="Input.Dismissible" class="form-check-input" />
+        <label asp-for="Input.Dismissible" class="form-check-label">Visitors can close the banner</label>
+    </div>
+
+    <div class="card">
+        <div class="card-body d-flex flex-wrap gap-3 align-items-end justify-content-between">
+            <div>
+                <div class="fw-bold">@(Model.HasDraft ? "Draft saved · not yet live" : "No unpublished changes")</div>
+                <div class="small text-secondary">
+                    @if (Model.Live is null)
+                    {
+                        <text>Nothing published yet; the site uses its built-in defaults.</text>
+                    }
+                    else
+                    {
+                        <text>Live: revision @Model.Live.Settings.Revision, published by @Model.Live.Settings.PublishedBy on @PacificTime.Format(Model.Live.Settings.PublishedAt).</text>
+                    }
+                </div>
+                <label asp-for="Note" class="form-label small mt-2 mb-1">Note for the history log (optional)</label>
+                <input asp-for="Note" class="form-control form-control-sm" style="min-width: 18rem" />
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+                @if (Model.HasDraft)
+                {
+                    <button type="submit" asp-page-handler="Discard" class="btn btn-outline-secondary">Discard draft</button>
+                }
+                <button type="submit" asp-page-handler="Save" class="btn btn-outline-primary">Save draft</button>
+                <button type="submit" asp-page-handler="Publish" class="btn btn-primary">Publish</button>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <script src="~/js/banner.js" asp-append-version="true"></script>
+}
