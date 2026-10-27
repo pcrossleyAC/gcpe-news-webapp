@@ -37,6 +37,7 @@
 
   <ItemGroup>
     <PackageReference Include="AngleSharp" Version="0.9.9" />
+    <PackageReference Include="Azure.Identity" Version="1.21.0" />
     <PackageReference Include="Gov.News.Api.Client" Version="1.0.209" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="10.0.14" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.14" />
@@ -54,6 +55,10 @@
     <Folder Include="ViewComponents\" />
     <Folder Include="Views\Shared\Components\WebCast\" />
     <Folder Include="wwwroot\Scripts\accessibility\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Gov.News.Settings\Gov.News.Settings.csproj" />
   </ItemGroup>
 
   <ProjectExtensions><VisualStudio><UserProperties appsettings_1json__JSONSchema="http://json.schemastore.org/bundleconfig" /></VisualStudio></ProjectExtensions>

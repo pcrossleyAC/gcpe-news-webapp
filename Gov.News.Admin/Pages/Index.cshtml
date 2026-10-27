@@ -13,7 +13,7 @@
 }
 else
 {
-    <p>Live: revision @settings.Revision, published by @settings.PublishedBy on @settings.PublishedAt?.ToString("MMM d, yyyy h:mm tt").</p>
+    <p>Live: revision @settings.Revision, published by @settings.PublishedBy on @PacificTime.Format(settings.PublishedAt).</p>
 }
 
 <h2 class="h4 mt-4">Banner</h2>
@@ -41,7 +41,7 @@ else
             {
                 <tr>
                     <td>@entry.Revision</td>
-                    <td>@entry.PublishedAt?.ToString("MMM d, yyyy h:mm tt")</td>
+                    <td>@PacificTime.Format(entry.PublishedAt)</td>
                     <td>@entry.PublishedBy</td>
                     <td>@entry.Note</td>
                 </tr>
