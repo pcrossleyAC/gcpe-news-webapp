@@ -1,0 +1,30 @@
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+
+COPY Gov.News.Admin/Gov.News.Admin.csproj Gov.News.Admin/
+COPY Gov.News.Settings/Gov.News.Settings.csproj Gov.News.Settings/
+RUN dotnet restore Gov.News.Admin/Gov.News.Admin.csproj
+
+COPY . .
+RUN dotnet publish Gov.News.Admin/Gov.News.Admin.csproj -c Release -o /app/publish /p:UseAppHost=false
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+
+# Same guard as the public site's image: Pacific times in the admin need tzdata
+# that knows B.C. stays on UTC-7 after November 2026.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends tzdata \
+    && rm -rf /var/lib/apt/lists/* \
+    && test "$(TZ=America/Vancouver date -d '2026-11-02 12:00:00 UTC' '+%z')" = "-0700"
+
+WORKDIR /app
+COPY --from=build /app/publish .
+
+# Internal only: route this service privately (no public route), and set
+# AzureAd__TenantId / AzureAd__ClientId / AzureAd__ClientSecret and
+# SiteSettings__ServiceUri as secrets. See README "Site settings".
+ENV ASPNETCORE_URLS=http://+:8080
+EXPOSE 8080
+USER $APP_UID
+
+ENTRYPOINT ["dotnet", "Gov.News.Admin.dll"]
