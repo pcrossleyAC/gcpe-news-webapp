@@ -98,6 +98,18 @@ Publishing is guarded by blob ETags, so two editors can't overwrite each other.
 | `SiteSettings__ServiceUri` | e.g. `https://<account>.blob.core.windows.net` |
 | `SiteSettings__Container` | Defaults to `site-settings` |
 
+**Public site configuration** (environment variables; read-only access)
+
+| Variable | Value |
+|---|---|
+| `SiteSettings__ConnectionString` | Azurite (`UseDevelopmentStorage=true`) or a connection string with a read-only SAS token |
+| or `SiteSettings__ServiceUri` + `SiteSettings__TenantId`, `__ClientId`, `__ClientSecret` | An app registration with **Storage Blob Data Reader** on the container |
+| `SiteSettings__Container` | Defaults to `site-settings` |
+
+With none of these set, the public site uses the built-in defaults and behaves exactly as before.
+It checks for a new revision once a minute, and pages are cached in browsers for a minute,
+so a publish reaches visitors within about two minutes.
+
 In the Azure portal: add `https://<admin host>/signin-oidc` as a redirect URI, set
 **Assignment required** on the enterprise application and assign the editors' group, and give
 the app registration **Storage Blob Data Contributor** on the container.

@@ -3,6 +3,9 @@ using System.Net;
 using System.Net.Http;
 using System.Security.Authentication;
 using System.Threading.Tasks;
+using Azure.Identity;
+using Azure.Storage.Blobs;
+using Gov.News.Settings;
 using Gov.News.WebApp;
 using Gov.News.Website.Middleware;
 using Microsoft.AspNetCore.Builder;
@@ -121,6 +124,8 @@ namespace Gov.News.Website
             
             services.AddSingleton<Repository, Repository>();
 
+            services.AddSingleton<ISiteSettingsSource>(serviceProvider => CreateSiteSettingsSource(serviceProvider));
+
             services.AddSingleton<IHostedService, Hubs.LiveHub>();
 
             // Add the Configuration object so that controllers may use it through dependency injection
@@ -151,6 +156,32 @@ namespace Gov.News.Website
             }) // default healthcheck registration name for uri ( you can change it on AddUrlGroup )	 
              .AddPolicyHandler(cachePolicy);
             services.AddRazorPages().AddRazorRuntimeCompilation();
+        }
+
+        // Banner and other editor-managed settings, published from Gov.News.Admin to Azure Blob storage.
+        // With no SiteSettings configuration the site uses the built-in defaults, i.e. behaves as before.
+        // This app only ever reads: give it a read-only credential.
+        private ISiteSettingsSource CreateSiteSettingsSource(IServiceProvider serviceProvider)
+        {
+            var config = Configuration.GetSection("SiteSettings");
+            var containerName = config["Container"] ?? "site-settings";
+            BlobContainerClient container;
+            if (!string.IsNullOrEmpty(config["ConnectionString"]))
+            {
+                // Azurite locally, or a connection string carrying a read-only SAS token.
+                container = new BlobContainerClient(config["ConnectionString"], containerName);
+            }
+            else if (!string.IsNullOrEmpty(config["ServiceUri"]))
+            {
+                // An app registration with "Storage Blob Data Reader" on the container.
+                var credential = new ClientSecretCredential(config["TenantId"], config["ClientId"], config["ClientSecret"]);
+                container = new BlobServiceClient(new Uri(config["ServiceUri"]), credential).GetBlobContainerClient(containerName);
+            }
+            else
+            {
+                return new DefaultSiteSettingsSource();
+            }
+            return new CachedSiteSettingsReader(container, serviceProvider.GetRequiredService<ILogger<CachedSiteSettingsReader>>());
         }
 
         // This method gets called by the runtime. Use this method to add services to the container.

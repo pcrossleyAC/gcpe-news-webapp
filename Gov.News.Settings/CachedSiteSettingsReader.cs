@@ -11,7 +11,7 @@ namespace Gov.News.Settings;
 /// <c>refreshInterval</c> and never throws: if storage is unreachable or the document is invalid,
 /// it keeps serving the last good settings, or the built-in defaults if there never were any.
 /// </summary>
-public sealed class CachedSiteSettingsReader
+public sealed class CachedSiteSettingsReader : ISiteSettingsSource
 {
     private readonly BlobClient _live;
     private readonly TimeSpan _refreshInterval;

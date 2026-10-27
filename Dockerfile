@@ -2,6 +2,7 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 COPY Gov.News.WebApp/Gov.News.WebApp.csproj Gov.News.WebApp/
+COPY Gov.News.Settings/Gov.News.Settings.csproj Gov.News.Settings/
 RUN dotnet restore Gov.News.WebApp/Gov.News.WebApp.csproj
 
 COPY . .

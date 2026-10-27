@@ -53,7 +53,7 @@ public class BannerModel(BlobSiteSettingsStore store) : PageModel
         switch (result.Status)
         {
             case PublishStatus.Published:
-                StatusMessage = $"Published revision {result.Live!.Settings.Revision}. The public site picks it up within a minute.";
+                StatusMessage = $"Published revision {result.Live!.Settings.Revision}. Visitors see it within two minutes.";
                 return RedirectToPage();
             case PublishStatus.Conflict:
                 ConflictLive = result.Live?.Settings;
