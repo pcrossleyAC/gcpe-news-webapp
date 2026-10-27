@@ -165,7 +165,6 @@ namespace Gov.News.Website
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
-                app.UseBrowserLink();
             }
             else
             {
