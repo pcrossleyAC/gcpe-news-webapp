@@ -93,6 +93,8 @@ public sealed class ThemeColors
 
 public sealed class FooterSettings
 {
+    /// <summary>Sentence before the help links, e.g. "We can help in over 220 languages…".</summary>
+    public string HelpText { get; set; } = "";
     public List<LinkSetting> HelpLinks { get; set; } = [];
     public List<LinkSetting> ConnectLinks { get; set; } = [];
     public List<LinkSetting> MoreInfoLinks { get; set; } = [];
@@ -112,4 +114,12 @@ public sealed class LinkSetting
 {
     public string Text { get; set; } = "";
     public string Url { get; set; } = "";
+    /// <summary>
+    /// Optional HTML id kept from the original markup (functional tests and analytics use them).
+    /// Not editable in the admin; carried through unchanged. Omitted from JSON when null.
+    /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public string? Id { get; set; }
+
+    public LinkSetting Copy() => new() { Text = Text, Url = Url, Id = Id };
 }

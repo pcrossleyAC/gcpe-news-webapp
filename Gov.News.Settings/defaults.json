@@ -29,6 +29,7 @@
     "bridgeLogo": "auto"
   },
   "footer": {
+    "helpText": "We can help in over 220 languages and through other accessible options.",
     "helpLinks": [
       {
         "text": "Call, email or text us",
@@ -42,37 +43,45 @@
     "connectLinks": [
       {
         "text": "Subscribe",
-        "url": "/subscribe"
+        "url": "/subscribe",
+        "id": "footerNewsletters"
       },
       {
         "text": "Social and RSS",
-        "url": "/connect"
+        "url": "/connect",
+        "id": "footerRSSFeeds"
       }
     ],
     "moreInfoLinks": [
       {
         "text": "BC Gov",
-        "url": "https://gov.bc.ca"
+        "url": "https://gov.bc.ca",
+        "id": "footerHome"
       },
       {
         "text": "Disclaimer",
-        "url": "https://www2.gov.bc.ca/gov/admin/disclaimer.page"
+        "url": "https://www2.gov.bc.ca/gov/admin/disclaimer.page",
+        "id": "footerDisclaimer"
       },
       {
         "text": "Privacy",
-        "url": "https://www2.gov.bc.ca/gov/content/home/privacy"
+        "url": "https://www2.gov.bc.ca/gov/content/home/privacy",
+        "id": "footerPrivacy"
       },
       {
         "text": "Accessibility",
-        "url": "https://www2.gov.bc.ca/gov/admin/accessibility.page"
+        "url": "https://www2.gov.bc.ca/gov/admin/accessibility.page",
+        "id": "footerAccessibility"
       },
       {
         "text": "Copyright",
-        "url": "https://www2.gov.bc.ca/gov/admin/copyright.page"
+        "url": "https://www2.gov.bc.ca/gov/admin/copyright.page",
+        "id": "footerCopyright"
       },
       {
         "text": "Contact Us",
-        "url": "/contact"
+        "url": "/contact",
+        "id": "footerContact"
       }
     ],
     "copyrightHolder": "Government of British Columbia"

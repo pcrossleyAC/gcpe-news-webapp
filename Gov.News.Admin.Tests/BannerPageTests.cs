@@ -123,7 +123,7 @@ public class BannerPageTests
 
         Assert.Contains("Must start with https://", editor.Html);
         Assert.Contains("value=\"http://gov.bc.ca\"", editor.Html);
-        Assert.Matches("id=\"Input_Links_0__Url\"[^>]*is-invalid|is-invalid[^>]*id=\"Input_Links_0__Url\"", editor.Html);
+        Assert.Matches("id=\"Links_0_Url\"[^>]*is-invalid|is-invalid[^>]*id=\"Links_0_Url\"", editor.Html);
         Assert.Null(await app.Store.GetLiveAsync());
     }
 
@@ -134,10 +134,10 @@ public class BannerPageTests
         var editor = app.SignIn("jane");
         await editor.OpenBannerAsync();
 
-        await editor.SubmitAsync("AddLink", Banner("info", "x", ("One", "https://one.example")));
-        Assert.Contains("id=\"Input_Links_1__Url\"", editor.Html);
+        await editor.SubmitAsync("AddLink", Banner("info", "x", ("One", "https://one.example")), "&list=Links");
+        Assert.Contains("id=\"Links_1_Url\"", editor.Html);
 
-        await editor.SubmitAsync("RemoveLink", Banner("info", "x", ("One", "https://one.example"), ("Two", "https://two.example")), "&index=0");
+        await editor.SubmitAsync("RemoveLink", Banner("info", "x", ("One", "https://one.example"), ("Two", "https://two.example")), "&list=Links&index=0");
         Assert.Contains("value=\"https://two.example\"", editor.Html);
         Assert.DoesNotContain("https://one.example", editor.Html);
         Assert.Null(await app.Store.GetDraftAsync("jane"));
@@ -198,7 +198,7 @@ public class BannerPageTests
         Assert.Contains("differs from it in: <strong>Banner, Footer</strong>", jane.Html);
 
         await jane.SubmitAsync("Rebase", Banner("info", "Jane's banner"));
-        Assert.Contains("now builds on revision 2", jane.Html);
+        Assert.Contains("Your banner changes now build on revision 2", jane.Html);
         await jane.SubmitAsync("Publish", Banner("info", "Jane's banner"));
 
         var live = (await app.Store.GetLiveAsync())!.Settings;
