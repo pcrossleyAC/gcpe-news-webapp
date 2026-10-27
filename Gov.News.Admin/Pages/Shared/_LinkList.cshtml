@@ -14,6 +14,7 @@
         var link = Model.Links[i];
         var textErrors = Model.ErrorsFor($"{Model.ErrorField}[{i}].text").ToList();
         var urlErrors = Model.ErrorsFor($"{Model.ErrorField}[{i}].url").ToList();
+        var idErrors = Model.ErrorsFor($"{Model.ErrorField}[{i}].id").ToList();
         var idPrefix = $"{Model.Key}_{i}";
         <div class="row g-2 align-items-start mb-2">
             <input type="hidden" name="@($"{Model.Name}[{i}].Id")" value="@link.Id" />
@@ -35,6 +36,10 @@
                 }
                 <button type="submit" formaction="?handler=RemoveLink&list=@Model.Key&index=@i" class="btn btn-outline-secondary flex-grow-1">Remove</button>
             </div>
+            @foreach (var message in idErrors)
+            {
+                <div class="col-12 text-danger small">@message</div>
+            }
         </div>
     }
     <button type="submit" formaction="?handler=AddLink&list=@Model.Key" class="btn btn-outline-primary">+ Add a link</button>

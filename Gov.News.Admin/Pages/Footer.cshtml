@@ -1,0 +1,60 @@
+@page
+@model FooterModel
+@{
+    ViewData["Title"] = "Footer links";
+    var year = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, PacificTime.Zone).Year;
+}
+
+<h1>Footer links</h1>
+<p class="text-secondary">The links at the bottom of every page. Links to other sites must start with https://; pages on this site start with /.</p>
+
+<partial name="_EditorMessages" model="Model" />
+
+<form method="post" id="settings-form" novalidate>
+    <input type="hidden" asp-for="BaseETag" />
+
+    <section class="card mb-4">
+        <div class="card-body">
+            <h2 class="h5">Help</h2>
+            <div class="mb-3">
+                <label asp-for="Input.HelpText" class="form-label fw-bold">Help text</label>
+                <textarea asp-for="Input.HelpText" class="form-control @(Model.ErrorsFor("footer.helpText").Any() ? "is-invalid" : "")" rows="2" maxlength="@SettingsValidator.MaxFooterHelpTextLength"></textarea>
+                @foreach (var message in Model.ErrorsFor("footer.helpText"))
+                {
+                    <div class="invalid-feedback">@message</div>
+                }
+                <div class="form-text">Shown before the help links, which follow as a sentence: “Call, email or text us, or find a service centre.”</div>
+            </div>
+            <partial name="_LinkList" model="@(new LinkListView("Help links", nameof(FooterInput.HelpLinks), "Input.HelpLinks", "footer.helpLinks", Model.Input.HelpLinks, Model))" />
+        </div>
+    </section>
+
+    <section class="card mb-4">
+        <div class="card-body">
+            <h2 class="h5">Connect with Us</h2>
+            <partial name="_LinkList" model="@(new LinkListView("Links", nameof(FooterInput.ConnectLinks), "Input.ConnectLinks", "footer.connectLinks", Model.Input.ConnectLinks, Model))" />
+        </div>
+    </section>
+
+    <section class="card mb-4">
+        <div class="card-body">
+            <h2 class="h5">More Info</h2>
+            <partial name="_LinkList" model="@(new LinkListView("Links", nameof(FooterInput.MoreInfoLinks), "Input.MoreInfoLinks", "footer.moreInfoLinks", Model.Input.MoreInfoLinks, Model))" />
+        </div>
+    </section>
+
+    <section class="card mb-4">
+        <div class="card-body">
+            <h2 class="h5">Copyright line</h2>
+            <label asp-for="Input.CopyrightHolder" class="form-label fw-bold">Copyright holder</label>
+            <input asp-for="Input.CopyrightHolder" class="form-control @(Model.ErrorsFor("footer.copyrightHolder").Any() ? "is-invalid" : "")" style="max-width: 32rem" />
+            @foreach (var message in Model.ErrorsFor("footer.copyrightHolder"))
+            {
+                <div class="invalid-feedback">@message</div>
+            }
+            <div class="form-text">Shows as “© @year @Model.Input.CopyrightHolder”. The year updates on its own each January.</div>
+        </div>
+    </section>
+
+    <partial name="_PublishBar" model="Model" />
+</form>
