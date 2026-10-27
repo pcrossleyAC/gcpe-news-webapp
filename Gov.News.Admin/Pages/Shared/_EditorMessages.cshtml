@@ -1,0 +1,39 @@
+@model SettingsEditorModel
+@* Status, conflict and other-section problems shown at the top of every settings screen.
+   The conflict buttons submit the screen's main form (id="settings-form"), so the editor's
+   current input is what gets kept. *@
+
+@if (Model.StatusMessage is not null)
+{
+    <div class="alert alert-info" role="status">@Model.StatusMessage</div>
+}
+
+@if (Model.ConflictLive is not null)
+{
+    <div class="alert alert-warning" role="alert">
+        <h2 class="h5">Someone published while you were editing</h2>
+        <p class="mb-2">
+            Revision @Model.ConflictLive.Revision was published by @Model.ConflictLive.PublishedBy
+            on @PacificTime.Format(Model.ConflictLive.PublishedAt). Nothing of yours was published, and your draft is saved.
+        </p>
+        @if (Model.ConflictSections.Count > 0)
+        {
+            <p class="mb-2">Your draft differs from it in: <strong>@string.Join(", ", Model.ConflictSections)</strong>.</p>
+        }
+        <button type="submit" form="settings-form" asp-page-handler="Rebase" class="btn btn-warning">Keep my @Model.SectionName.ToLowerInvariant(), on top of their version</button>
+        <button type="submit" form="settings-form" asp-page-handler="Discard" class="btn btn-outline-secondary">Discard mine, use theirs</button>
+    </div>
+}
+
+@if (Model.OtherSectionErrors.Any())
+{
+    <div class="alert alert-danger" role="alert">
+        <p class="mb-1">Other parts of the draft have problems that block publishing:</p>
+        <ul class="mb-0">
+            @foreach (var error in Model.OtherSectionErrors)
+            {
+                <li><code>@error.Field</code>: @error.Message</li>
+            }
+        </ul>
+    </div>
+}

@@ -14,6 +14,7 @@ Repository Map
 - **Gov.News.Settings**: Shared settings model, validation and Azure Blob storage, used by both apps
 - **Gov.News.Settings.Tests**: Tests for the settings library
 - Gov.News.sln: Solution containing all of the above
+- Dockerfile / Dockerfile.admin: container images for the public site and the admin
 - Dotnet-Snyk: Source for a Dotnet + Snyk container
 - Dotnet-Sonar: Source for a SonarQube scanner
 - functional-tests: BDD Tests

@@ -135,6 +135,10 @@ public sealed class BlobSiteSettingsStore
         }
     }
 
+    /// <summary>A published revision as it was, or null if there is no such revision.</summary>
+    public async Task<SiteSettings?> GetRevisionAsync(int revision, CancellationToken ct = default) =>
+        (await ReadAsync(HistoryBlobName(revision), ct))?.Settings;
+
     /// <summary>Publishes an earlier revision again, as a new revision.</summary>
     public async Task<PublishResult> RestoreAsync(int revision, string? expectedLiveETag, string publishedBy, CancellationToken ct = default)
     {

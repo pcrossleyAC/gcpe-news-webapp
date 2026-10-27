@@ -1,0 +1,87 @@
+@page
+@model HistoryModel
+@{
+    ViewData["Title"] = "Publish history";
+    var liveRevision = Model.Live?.Settings.Revision;
+}
+
+<h1>Publish history</h1>
+<p class="text-secondary">Every publish is kept. Restoring an old revision publishes it again as a new revision, so nothing is lost.</p>
+
+@if (Model.StatusMessage is not null)
+{
+    <div class="alert alert-info" role="status">@Model.StatusMessage</div>
+}
+
+@if (Model.Candidate is not null)
+{
+    <section class="card border-warning mb-4" aria-labelledby="restore-heading">
+        <div class="card-body">
+            <h2 class="h5" id="restore-heading">Restore revision @Model.Candidate.Revision?</h2>
+            <p class="mb-2">Published by @Model.Candidate.PublishedBy on @PacificTime.Format(Model.Candidate.PublishedAt)@(Model.Candidate.Note is null ? "" : $" — “{Model.Candidate.Note}”").</p>
+            @if (Model.CandidateChanges.Count == 0)
+            {
+                <p>It is the same as what is live now, so restoring it changes nothing visitors see.</p>
+            }
+            else
+            {
+                <p class="mb-2">Compared with what is live now, this changes: <strong>@string.Join(", ", Model.CandidateChanges)</strong>.</p>
+                @if (Model.CandidateChanges.Contains("Banner"))
+                {
+                    <p class="mb-2">The banner would be:
+                        @if (Model.Candidate.Banner.Enabled)
+                        {
+                            <strong>@(Model.Candidate.Banner.Style == "emergency" ? "Emergency" : "Information")</strong><text>, “@Model.Candidate.Banner.Message”</text>
+                        }
+                        else
+                        {
+                            <strong>Off</strong>
+                        }
+                    </p>
+                }
+            }
+            <form method="post" asp-page-handler="Restore" class="d-inline">
+                <input type="hidden" name="revision" value="@Model.Candidate.Revision" />
+                <input type="hidden" name="baseETag" value="@Model.Live?.ETag" />
+                <button type="submit" class="btn btn-warning">Restore revision @Model.Candidate.Revision</button>
+            </form>
+            <a asp-page="/History" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+    </section>
+}
+
+@if (Model.Entries.Count == 0)
+{
+    <p>Nothing has been published yet.</p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr><th scope="col">Revision</th><th scope="col">When (Pacific)</th><th scope="col">Who</th><th scope="col">Note</th><th scope="col"><span class="visually-hidden">Action</span></th></tr>
+            </thead>
+            <tbody>
+                @foreach (var entry in Model.Entries)
+                {
+                    <tr>
+                        <td class="fw-bold">@entry.Revision</td>
+                        <td>@PacificTime.Format(entry.PublishedAt)</td>
+                        <td>@entry.PublishedBy</td>
+                        <td>@entry.Note</td>
+                        <td class="text-end">
+                            @if (entry.Revision == liveRevision)
+                            {
+                                <span class="badge text-bg-primary">Live</span>
+                            }
+                            else
+                            {
+                                <a asp-page="/History" asp-route-restore="@entry.Revision" class="btn btn-sm btn-outline-secondary">Restore…</a>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

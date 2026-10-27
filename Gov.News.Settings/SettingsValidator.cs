@@ -14,6 +14,8 @@ public sealed record ValidationError(string Field, string Message);
 public static partial class SettingsValidator
 {
     public const double MinimumContrast = 4.5; // WCAG 2.x AA, normal text
+    public const int MaxFooterHelpTextLength = 200;
+    public const int MaxSummaryLength = 200;
 
     public static readonly IReadOnlySet<string> BannerStyles = new HashSet<string> { "info", "emergency" };
     public static readonly IReadOnlySet<string> BridgeLogoModes = new HashSet<string> { "auto", "on", "off" };
@@ -29,10 +31,15 @@ public static partial class SettingsValidator
         ValidateLinks("footer.moreInfoLinks", settings.Footer.MoreInfoLinks, errors);
         if (string.IsNullOrWhiteSpace(settings.Footer.CopyrightHolder))
             errors.Add(new("footer.copyrightHolder", "Enter who holds the copyright."));
-        ValidateLinks("connect.facebook", settings.Connect.Facebook, errors);
-        ValidateLinks("connect.x", settings.Connect.X, errors);
-        ValidateLinks("connect.instagram", settings.Connect.Instagram, errors);
-        ValidateLinks("connect.youtube", settings.Connect.Youtube, errors);
+        if (settings.Footer.HelpText.Length > MaxFooterHelpTextLength)
+            errors.Add(new("footer.helpText", $"Keep the help text to {MaxFooterHelpTextLength} characters or fewer."));
+        if (settings.Footer.HelpText.Contains('<') || settings.Footer.HelpText.Contains('>'))
+            errors.Add(new("footer.helpText", "Use plain text."));
+        foreach (var (key, _, links) in settings.Connect.Networks())
+        {
+            ValidateLinks($"connect.{key}.featured", links.Featured, errors);
+            ValidateLinks($"connect.{key}.accounts", links.Accounts, errors);
+        }
         return errors;
     }
 
@@ -57,8 +64,7 @@ public static partial class SettingsValidator
         var colors = new (string Field, string Value)[]
         {
             ("primary", c.Primary), ("text", c.Text), ("link", c.Link), ("bannerInfo", c.BannerInfo),
-            ("bannerEmergency", c.BannerEmergency), ("bannerSuccess", c.BannerSuccess), ("warning", c.Warning),
-            ("footerBackground", c.FooterBackground), ("border", c.Border),
+            ("bannerEmergency", c.BannerEmergency), ("footerBackground", c.FooterBackground),
         };
         var allValid = true;
         foreach (var (field, value) in colors)
@@ -78,7 +84,6 @@ public static partial class SettingsValidator
             CheckContrast("theme.colors.link", c.Link, white, "on white", errors);
             CheckContrast("theme.colors.bannerInfo", c.BannerInfo, white, "behind white text", errors);
             CheckContrast("theme.colors.bannerEmergency", c.BannerEmergency, white, "behind white text", errors);
-            CheckContrast("theme.colors.bannerSuccess", c.BannerSuccess, white, "behind white text", errors);
             CheckContrast("theme.colors.footerBackground", c.FooterBackground, c.Text, "behind body text", errors);
         }
 
@@ -104,6 +109,10 @@ public static partial class SettingsValidator
                 errors.Add(new($"{field}[{i}].text", "Enter the link text."));
             if (!IsSafeUrl(link.Url))
                 errors.Add(new($"{field}[{i}].url", "Must start with https:// or / (a page on this site)."));
+            if (link.Summary is not null && (link.Summary.Length > MaxSummaryLength || link.Summary.Contains('<') || link.Summary.Contains('>')))
+                errors.Add(new($"{field}[{i}].summary", $"Use plain text, {MaxSummaryLength} characters or fewer."));
+            if (link.Id is not null && !HtmlId().IsMatch(link.Id))
+                errors.Add(new($"{field}[{i}].id", "Link id must start with a letter and use only letters, digits, - or _."));
         }
     }
 
@@ -136,6 +145,9 @@ public static partial class SettingsValidator
         }
         return 0.2126 * Channel(1) + 0.7152 * Channel(3) + 0.0722 * Channel(5);
     }
+
+    [GeneratedRegex("^[A-Za-z][A-Za-z0-9_-]{0,63}$")]
+    private static partial Regex HtmlId();
 
     [GeneratedRegex("^#[0-9A-Fa-f]{6}$")]
     private static partial Regex HexColor();

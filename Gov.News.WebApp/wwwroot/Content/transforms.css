@@ -522,7 +522,7 @@
         .comm-contacts-body h5 {
             font-size: 18px;
             font-weight: 600;
-            color: #2d2d2d;
+            color: var(--theme-text, #2D2D2D);
             margin-top: 20px;
             padding-bottom: 5px;
         }
@@ -530,7 +530,7 @@
         .comm-contacts-body h6 {
             font-size: 14px;
             font-weight: 600;
-            color: #2d2d2d;
+            color: var(--theme-text, #2D2D2D);
             margin-top: 15px;
             margin-bottom: 2px;
         }
@@ -646,7 +646,7 @@
     .story-page h2 {
         font-size: 26px;
         font-weight: 600;
-        color: #2d2d2d;
+        color: var(--theme-text, #2D2D2D);
         margin-top: 10px;
         margin-bottom: 10px;
         padding-left: 0px;
@@ -922,7 +922,7 @@
     }
 
     .media-container .connect-with-bc p {
-        color: #2d2d2d;
+        color: var(--theme-text, #2D2D2D);
     }
 
     .back-to-top {
@@ -965,7 +965,7 @@
             .collapsible-regions .resource-links > h5 {
                 margin-top: 10px;
                 margin-bottom: 0;
-                color: #003366;
+                color: var(--theme-link, #003366);
                 background-image: url(Images/chevron-down.png);
                 background-repeat: no-repeat;
                 background-position: top 4px right 2px;

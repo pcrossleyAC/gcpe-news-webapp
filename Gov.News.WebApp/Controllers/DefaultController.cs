@@ -1,3 +1,4 @@
+using Gov.News.Settings;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,11 +22,17 @@ namespace Gov.News.Website.Controllers
     public class DefaultController : Shared.IndexController<Home>
     {
         private readonly IWebHostEnvironment _env;
+        private readonly ISiteSettingsSource _siteSettings;
 
-        public DefaultController(Repository repository, IConfiguration configuration, IWebHostEnvironment env) : base(repository, configuration)
+        public DefaultController(Repository repository, IConfiguration configuration, IWebHostEnvironment env, ISiteSettingsSource siteSettings) : base(repository, configuration)
         {
             _env = env;
+            _siteSettings = siteSettings;
         }
+
+        /// <summary>Featured accounts first, then the rest by name.</summary>
+        private static Link[] ToLinks(SocialNetworkLinks links) =>
+            links.InDisplayOrder().Select(l => new Link() { Url = l.Url, Title = l.Text, Summary = l.Summary }).ToArray();
 
         [ResponseCache(CacheProfileName = "Default"), Noarchive]
         public async Task<ActionResult> Reference(string reference)
@@ -334,115 +341,16 @@ namespace Gov.News.Website.Controllers
             var model = new ConnectViewModel();
             await LoadAsync(model);
 
-            model.FacebookLinks = new Link[]
-            {                 
-                        new Link() { Url = "https://www.facebook.com/BizPaLBC", Title = "BC BizPaL" },
-                        new Link() { Url = "https://www.facebook.com/bchonours", Title = "BC Honours" },
-                        new Link() { Url = "https://www.facebook.com/innovatebc", Title = "Innovate BC" },
-                        new Link() { Url = "https://www.facebook.com/YourBCParks", Title = "BC Parks" },
-                        new Link() { Url = "https://www.facebook.com/BCForestFireInfo", Title = "BC Wildfire Service" },
-                        new Link() { Url = "https://www.facebook.com/ColumbiaRiverTreaty", Title = "Columbia River Treaty Review" },
-                        new Link() { Url = "https://www.facebook.com/ConservationOfficerService", Title = "Conservation Officer Service" },
-                        new Link() { Url = "https://www.facebook.com/QuitNowBC", Title = "QuitNowBC" },
-                        new Link() { Url = "https://www.facebook.com/BCRecSitesandTrails", Title = "Rec Sites and Trails BC" },
-                        new Link() { Url = "https://www.facebook.com/people/Residential-Tenancy-Branch-Province-of-BC/100088142227724/", Title = "Residential Tenancy Branch" },
-                        new Link() { Url = "https://www.facebook.com/SuperNaturalBC ", Title = "Super, Natural British Columbia" },
-                        new Link() { Url = "https://www.facebook.com/WorkBC", Title = "WorkBC" },
-                        new Link() { Url = "https://www.facebook.com/bchousing.org/", Title = "BC Housing" },
-                        new Link() { Url = "https://www.facebook.com/PreparedBC/", Title = "PreparedBC" },
-                        new Link() { Url = "https://www.facebook.com/BCFireSafety", Title = "BC Fire Safety" },
-                        new Link() { Url = "https://www.facebook.com/AgriServiceBC", Title = "AgriService BC" },
-                        new Link() { Url = "https://www.facebook.com/RoadSafetyBC", Title = "Road Safety BC" },
-                        new Link() { Url = "https://www.facebook.com/HealthyBritishColumbia", Title = "HealthyBC" },
-                        new Link() { Url = "https://www.facebook.com/EatDrinkBuyBC", Title = "Buy BC" },
-                        new Link() { Url = "https://www.facebook.com/EmergencyInfoBC", Title = "Emergency Info BC" },
-                        new Link() { Url = "https://www.facebook.com/www.DriveBC.ca", Title = "DriveBC" },
-            }.OrderBy(t => t.Title)
-            .Prepend(new Link() { Url = "https://www.facebook.com/GovernmentOfBCChinese", Title = "Government of British Columbia Chinese (卑詩省政府中文官方帳號)", Summary = "" })
-            .Prepend(new Link() { Url = "https://www.facebook.com/BCProvincialGovernment", Title = "Government of British Columbia", Summary = "Join us for BC news, information and updates" })
-            .ToArray();
-
-
-            model.YoutubeLinks = new Link[]
-            {                        
-                         new Link() { Url = "https://www.youtube.com/bchousing1", Title = "BC Housing" },
-                         new Link() { Url = "https://www.youtube.com/@BCDigitalTrust", Title = "BC Digital Trust" },
-                         new Link() { Url = "https://www.youtube.com/BCPublicService", Title = "BC Public Service" },
-                         new Link() { Url = "https://www.youtube.com/user/BCTradeInvest", Title = "BC Trade & Invest" },
-                         new Link() { Url = "https://www.youtube.com/@BCWildfireService", Title = "BC Wildfire Service" },
-                         new Link() { Url = "https://www.youtube.com/MinistryofTranBC", Title = "BC Ministry of Transportation and Transit" },
-                         new Link() { Url = "https://www.youtube.com/CareerTrekBC", Title = "Career Trek BC" },
-                         new Link() { Url = "https://www.youtube.com/EmergencyInfoBC", Title = "PreparedBC" },
-                         new Link() { Url = "https://www.youtube.com/user/QuitNowBC", Title = "QuitNowBC" },
-                         new Link() { Url = "https://www.youtube.com/user/TourismBC", Title = "Super, Natural British Columbia" },
-                         new Link() { Url = "https://www.youtube.com/workbc", Title = "WorkBC" },
-                         new Link() { Url = "https://www.youtube.com/playlist?list=PL98F546CAAFA58723", Title = "BC Parks" },
-            }.OrderBy(t => t.Title).Prepend(new Link() { Url = "https://www.youtube.com/ProvinceofBC", Title = "Province of BC", Summary = "Subscribe to get the latest videos from the Government of British Columbia" }).ToArray();
-
-            model.FlickrLinks = new Link[]
-            {
-                         new Link() { Url = "https://www.flickr.com/photos/tranbc/", Title = "BC Ministry of Transportation & Transit's photostream" }
-            }.OrderBy(t => t.Title).Prepend(new Link() { Url = "https://www.flickr.com/photos/bcgovphotos", Title = "Province of BC", Summary = "View and share the latest photos from the Government of British Columbia" }).ToArray();
-
-            model.TwitterLinks = new Link[]
-            {
-                        new Link() { Url = "https://x.com/ComplianceBC", Title = "@ComplianceBC", Summary = "Environmental compliance in BC: changes, enforcement and education" },
-                        new Link() { Url = "https://x.com/bcgovfireinfo", Title = "@BCGovFireInfo", Summary = "Find updates on significant wildfires around the province" },
-                        new Link() { Url = "https://x.com/BC_Housing", Title = "@BC_Housing", Summary = "Learn about housing solutions and the latest projects in BC" },
-                        new Link() { Url = "https://x.com/innovate_bc", Title = "@Innovate_BC", Summary = "Info on developing entrepreneurial talent and commercializing technology in BC" },
-                        new Link() { Url = "https://x.com/BCTradeInvest", Title = "@BCTradeInvest", Summary = "Find expertise to help your business grow internationally" },
-                        new Link() { Url = "https://x.com/CRTreaty", Title = "@CRTreaty", Summary = "Join the discussion on the Columbia River Treaty Review" },
-                        new Link() { Url = "https://x.com/DriveBC", Title = "@DriveBC" , Summary = "Get developing road closure & weather information in BC" },
-                        new Link() { Url = "https://x.com/emergencyinfobc", Title = "@EmergencyInfoBC" , Summary = "Receive current and verified updates, safety instructions, and links to official sources during emergencies in B.C." },
-                        new Link() { Url = "https://x.com/PreparedBC", Title = "@PreparedBC" , Summary = "Ready for a disaster? Get preparedness tips & recovery info here." },
-                        new Link() { Url = "https://x.com/govTogetherBC", Title = "@govTogetherBC" , Summary = "Find consultation and engagement opportunities in BC" },
-                        new Link() { Url = "https://x.com/quitnowbc", Title = "@QuitNowBC", Summary = "Want to quit smoking? We can help!" },
-                        new Link() { Url = "https://x.com/RoadSafetyBC", Title = "@RoadSafetyBC" , Summary = "Get information on road safety and driver behaviour" },
-                        new Link() { Url = "https://x.com/WorkBC", Title = "@WorkBC", Summary = "Explore career paths and get tips for finding jobs in British Columbia" },
-                        new Link() { Url = "https://x.com/BCSheriffs", Title = "@BCSheriffs", Summary = "Learn about the diverse responsibilities and activities of the BC Sheriff Service" },
-                        new Link() { Url = "https://x.com/creativebcs", Title = "@CreativeBCs", Summary = "Find information on BC's film, TV, music, interactive & digital media, books & magazines" },
-                        new Link() { Url = "https://x.com/bc_eao", Title = "@BC_EAO", Summary = "Get project updates and environmental assessment information" },
-                        new Link() { Url = "https://x.com/BC_FireSafety", Title = "@BC_FireSafety", Summary = "Learn about fire prevention, life safety and what’s happening in the BC fire service" },
-                        new Link() { Url = "https://x.com/TenancyBc", Title = "@TenancyBC", Summary = "Information, education and dispute resolution services for landlords and tenants in BC" },
-                        new Link() { Url = "https://x.com/_BCCOS", Title = "@_BCCOS", Summary = "Conservation Officer Service" },
-                        new Link() { Url = "https://x.com/SpillsInfoBC", Title = "@SpillsInfoBC", Summary = "B.C. Spill Response" },
-                        new Link() { Url = "https://x.com/BCProsecution", Title = "@BCProsecution", Summary = "BC Prosecution Service" },
-                        new Link() { Url = "https://x.com/EatDrinkBuyBC", Title = "@EatDrinkBuyBC", Summary = "Buy BC helps you choose fresh-tasting food and beverage products that are grown, raised and made right here in BC" },
-            }.OrderBy(t => t.Title).Prepend(new Link() { Url = "https://x.com/BCGovNews", Title = "@BCGovNews", Summary = "Read daily news tweets from the Government of British Columbia" }).ToArray();
-
-            model.InstagramLinks = new Link[]
-            {
-                        new Link() { Url = "https://www.instagram.com/bchonours", Title = "BC Honours", Summary = "" },
-                        new Link() { Url = "https://www.instagram.com/bchousing/", Title = "BC Housing", Summary = "" },
-                        new Link() { Url = "https://www.instagram.com/yourbcparks/", Title = "BC Parks", Summary = "" },
-                        new Link() { Url = "https://www.instagram.com/creativebcs/", Title = "Creative BC", Summary = "" },
-                        new Link() { Url = "https://www.instagram.com/supernaturalbc/", Title = "Super, Natural British Columbia", Summary = "" },
-                        new Link() { Url = "https://www.instagram.com/innovate_bc/", Title = "Innovate BC", Summary = "" },
-                        new Link() { Url = "https://www.instagram.com/prepared_bc/", Title = "Prepared BC", Summary = "" },
-                        new Link() { Url = "https://www.instagram.com/roadsafetybc/", Title = "Road Safety BC", Summary = "" },
-                        new Link() { Url = "https://www.instagram.com/hellohealthybc/", Title = "HealthyBC", Summary = "" },
-                        new Link() { Url = "https://www.instagram.com/EatDrinkBuyBC/", Title = "Buy BC", Summary = "" },
-                        new Link() { Url = "https://www.instagram.com/bcpublicservice/", Title = "BC Public Service", Summary = "" },
-                        new Link() { Url = "https://www.instagram.com/bcgovfireinfo/", Title = "BC Wildfire Service", Summary = "" },
-                        new Link() { Url = "https://www.instagram.com/workbc.ca/", Title = "WorkBC", Summary = "" },
-            }.OrderBy(t => t.Title).Prepend(new Link() { Url = "https://www.instagram.com/governmentofbc/", Title = "Government of BC", Summary = "" }).ToArray();
-
-            model.BlueskyLinks = new Link[]
-            {
-                new Link() { Url = "https://bsky.app/profile/tradeandinvestbc.bsky.social", Title = "Trade and Invest British Columbia", Summary = "" },
-            }.OrderBy(t => t.Title).Prepend(new Link() { Url = "https://governmentofbc.bsky.social", Title = "Government of BC", Summary = "Read news from the Government of British Columbia" }).ToArray();
-
-            model.ThreadsLinks = new Link[]
-           {
-               new Link() { Url = "https://www.threads.com/@prepared_bc", Title = "Prepared BC", Summary = "" },
-           }.OrderBy(t => t.Title).Prepend(new Link() { Url = "https://www.threads.net/@governmentofbc", Title = "Government of BC", Summary = "" }).ToArray();
-
-            model.BlogsLinks = new Link[]
-            {
-                        new Link() { Url = "https://www.britishcolumbia.ca/about-trade-and-invest-bc/news-stories/", Title = "BC Trade and Invest" },
-                        new Link() { Url = "https://www.workbc.ca/quick-reads", Title = "WorkBC" },
-                        new Link() { Url = "https://engage.gov.bc.ca/bcparksblog", Title = "BC Parks" },
-            }.OrderBy(t => t.Title).Prepend(new Link() { Url = "https://engage.gov.bc.ca/govtogetherbc/", Title = "GovTogetherBC" }).ToArray();
+            // Social accounts come from published site settings (Gov.News.Admin), or the built-in defaults.
+            var connect = (await _siteSettings.GetAsync()).Connect;
+            model.FacebookLinks = ToLinks(connect.Facebook);
+            model.YoutubeLinks = ToLinks(connect.Youtube);
+            model.FlickrLinks = ToLinks(connect.Flickr);
+            model.TwitterLinks = ToLinks(connect.X);
+            model.InstagramLinks = ToLinks(connect.Instagram);
+            model.BlueskyLinks = ToLinks(connect.Bluesky);
+            model.ThreadsLinks = ToLinks(connect.Threads);
+            model.BlogsLinks = ToLinks(connect.Blogs);
 
             var rssLinks = new List<Link>();
             var ministries = model.Ministries.Select(m => m.Index).OrderBy(c => c.Name == "Office of the Premier" ? 0 : 1).ThenBy(c => c.Name);

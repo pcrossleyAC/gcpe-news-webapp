@@ -1,0 +1,55 @@
+@model LinkListView
+@* An editable list of links. Rows post as {Name}[i].Text / .Url / .Id; add, remove and move
+   are server-side so they work without JavaScript. Errors come from the validator's field
+   names ({ErrorField}[i].text / .url). *@
+
+<fieldset class="mb-4">
+    <legend class="h6 fw-bold">@Model.Title</legend>
+    @if (Model.Hint is not null)
+    {
+        <p class="form-text mt-0">@Model.Hint</p>
+    }
+    @for (var i = 0; i < Model.Links.Count; i++)
+    {
+        var link = Model.Links[i];
+        var textErrors = Model.ErrorsFor($"{Model.ErrorField}[{i}].text").ToList();
+        var urlErrors = Model.ErrorsFor($"{Model.ErrorField}[{i}].url").ToList();
+        var idErrors = Model.ErrorsFor($"{Model.ErrorField}[{i}].id").ToList();
+        var summaryErrors = Model.ErrorsFor($"{Model.ErrorField}[{i}].summary").ToList();
+        var idPrefix = $"{Model.Key}_{i}";
+        <div class="row g-2 align-items-start mb-2">
+            <input type="hidden" name="@($"{Model.Name}[{i}].Id")" value="@link.Id" />
+            <div class="@(Model.ShowSummary ? "col-md-3" : "col-md-4")">
+                <label for="@(idPrefix)_Text" class="form-label small">Link text</label>
+                <input id="@(idPrefix)_Text" name="@($"{Model.Name}[{i}].Text")" value="@link.Text" class="form-control @(textErrors.Any() ? "is-invalid" : "")" />
+                @foreach (var message in textErrors) { <div class="invalid-feedback">@message</div> }
+            </div>
+            <div class="@(Model.ShowSummary ? "col-md-3" : "col-md-5")">
+                <label for="@(idPrefix)_Url" class="form-label small">Web address</label>
+                <input id="@(idPrefix)_Url" name="@($"{Model.Name}[{i}].Url")" value="@link.Url" type="url" class="form-control @(urlErrors.Any() ? "is-invalid" : "")" />
+                @foreach (var message in urlErrors) { <div class="invalid-feedback">@message</div> }
+            </div>
+            @if (Model.ShowSummary)
+            {
+                <div class="col-md-3">
+                    <label for="@(idPrefix)_Summary" class="form-label small">Description (optional)</label>
+                    <input id="@(idPrefix)_Summary" name="@($"{Model.Name}[{i}].Summary")" value="@link.Summary" maxlength="@SettingsValidator.MaxSummaryLength" class="form-control @(summaryErrors.Any() ? "is-invalid" : "")" />
+                    @foreach (var message in summaryErrors) { <div class="invalid-feedback">@message</div> }
+                </div>
+            }
+            <div class="col-md-3 d-flex gap-1 link-row-actions">
+                @if (Model.Reorderable)
+                {
+                    <button type="submit" formaction="?handler=MoveLink&list=@Model.Key&index=@i&by=-1" class="btn btn-outline-secondary" disabled="@(i == 0)" aria-label="Move @link.Text up">↑</button>
+                    <button type="submit" formaction="?handler=MoveLink&list=@Model.Key&index=@i&by=1" class="btn btn-outline-secondary" disabled="@(i == Model.Links.Count - 1)" aria-label="Move @link.Text down">↓</button>
+                }
+                <button type="submit" formaction="?handler=RemoveLink&list=@Model.Key&index=@i" class="btn btn-outline-secondary flex-grow-1">Remove</button>
+            </div>
+            @foreach (var message in idErrors)
+            {
+                <div class="col-12 text-danger small">@message</div>
+            }
+        </div>
+    }
+    <button type="submit" formaction="?handler=AddLink&list=@Model.Key" class="btn btn-outline-primary">+ Add a link</button>
+</fieldset>

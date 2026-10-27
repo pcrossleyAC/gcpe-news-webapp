@@ -47,14 +47,14 @@
     --info-green: #42814A;
     --warning-yello: #F8BB47;
     --alert-red: #CE3E39;
-    --dark: #@d2D2D;
+    --dark: #2D2D2D;
     
 }
 
 body {
     font-family: "BCSans", "Noto Sans", Verdana, Arial, sans-serif;
     background-color: #fff;
-    color: #2D2D2D;
+    color: var(--theme-text, #2D2D2D);
     font-size: 13px;
     /*overflow-y: scroll;*/
     overflow-x: hidden;
@@ -62,7 +62,7 @@ body {
 }
 
 .header .navbar-brand {
-    color: #2d2d2d;
+    color: var(--theme-text, #2D2D2D);
     font-size: 18px;
     font-weight: 700;
     border-left: 2px solid var(--primary-blue);
@@ -111,7 +111,7 @@ body {
 }
 
 #navbarSupportedContent .navbar-nav li a {
-    color: #2D2D2D !important;
+    color: var(--theme-text, #2D2D2D) !important;
 }
 
 #navbarSupportedContent .navbar-nav li {
@@ -183,8 +183,8 @@ body {
 }
 
 #footer {
-    background-color: #FFF;
-    color: #2d2d2d;
+    background-color: var(--theme-footer-background, #FFF);
+    color: var(--theme-text, #2D2D2D);
     padding-top: 40px;
     font-size: 16px;
 }
@@ -210,7 +210,7 @@ body {
 
 .footer-bc a{
     text-decoration: underline;
-    color: #2D2D2D;
+    color: var(--theme-text, #2D2D2D);
 }
 
 #BCGov-logo-footer, #BCGov-logo-footer-bridge {
@@ -338,7 +338,7 @@ body {
     gap: 10px 30px;
     font-size: 16px;
     padding: 25px 20px 20px 0px;
-    color: #2d2d2d;
+    color: var(--theme-text, #2D2D2D);
 }
 
 .menu ul li {
@@ -354,7 +354,7 @@ body {
 .menu ul li a {
     display: block;
     padding: 5px 0 5px 5px;
-    color: #2d2d2d;
+    color: var(--theme-text, #2D2D2D);
 }
 
 .menu ul li a:hover {
@@ -423,7 +423,7 @@ body {
 }
 
 .navbar-toggler, #search-md-button {
-    border-color: #2D2D2D;
+    border-color: var(--theme-text, #2D2D2D);
 }
 
 .banner-toggle-container {

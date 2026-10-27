@@ -2,8 +2,14 @@
 @using Gov.News.Website.Models
 @using Gov.News.WebApp.Extensions
 @inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment hostingEnv
+@inject Gov.News.Settings.ISiteSettingsSource SiteSettingsSource
 @model BaseViewModel
 @{
+    // Theme colours, footer links and copyright come from published site settings (Gov.News.Admin), or the built-in defaults.
+    var siteSettings = await SiteSettingsSource.GetAsync();
+    var footer = siteSettings.Footer;
+    var themeColors = siteSettings.Theme.Colors;
+    var footerYear = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, TimeZoneConverter.TZConvert.GetTimeZoneInfo("America/Vancouver")).Year;
     var dob = new System.DateTime(1948, 11, 14);
     var now = DateTime.Now;
     if (@Startup.granvilleTestDate != DateTime.MinValue)
@@ -135,6 +141,16 @@
         <partial name="_WebAnalytics_Search" />
     }
 
+    @* After every stylesheet, so these win. Values are validated #RRGGBB colours. *@
+    <style id="site-theme">
+        :root {
+            --primary-blue: @themeColors.Primary;
+            --info-blue: @themeColors.Primary;
+            --theme-text: @themeColors.Text;
+            --theme-link: @themeColors.Link;
+            --theme-footer-background: @themeColors.FooterBackground;
+        }
+    </style>
 </head>
 <body>
     <!--googleoff: all-->
@@ -355,27 +371,30 @@
                 <img id="BCGov-logo-footer" src="~/Content/Images/Gov/BCID_H_rgb_pos_LH_crop.svg" alt="Government of B.C." class="@(!@Model.GranvilleLive ? "granville-bridge-on" : "granville-bridge-off")">
                 <img id="BCGov-logo-footer-bridge" src="~/Content/Images/Gov/BCID_H_rgb_pos_LH_crop_bridge.svg" alt="Government of B.C." class="@(@Model.GranvilleLive ? "granville-bridge-on" : "granville-bridge-off")">
                
-                <p>We can help in over 220 languages and through other accessible options. &nbsp; 
-                    <a class="" href="https://www2.gov.bc.ca/gov/content/home/get-help-with-government-services">Call, email or text us</a>, or
-                    <a class="" href="https://www2.gov.bc.ca/gov/content/home/services-a-z">find a service centre</a>.
+                <p>@footer.HelpText &nbsp;
+                    @for (var i = 0; i < footer.HelpLinks.Count; i++)
+                    {
+                        var link = footer.HelpLinks[i];
+                        <a class="" id="@link.Id" href="@link.Url">@link.Text</a>@(i == footer.HelpLinks.Count - 1 ? "." : i == footer.HelpLinks.Count - 2 ? ", or" : ",")
+                    }
                 </p>
             </div>
             <div class="footer-connect">
                 <h4>Connect with Us</h4>
                 <ul class="" role="menu">
-                    <li role="menuitem"><a id="footerNewsletters" href="/subscribe">Subscribe</a></li>
-                    <li role="menuitem"><a id="footerRSSFeeds" href="/connect">Social and RSS</a></li>
+                    @foreach (var link in footer.ConnectLinks)
+                    {
+                        <li role="menuitem"><a id="@link.Id" href="@link.Url">@link.Text</a></li>
+                    }
                 </ul>
             </div>
             <div class="footer-more-info">
                 <h4>More Info</h4>
                 <ul class="pull-left" role="menu">
-                    <li role="menuitem"><a id="footerHome" href="https://gov.bc.ca">BC Gov</a></li>
-                    <li role="menuitem"><a id="footerDisclaimer" href="https://www2.gov.bc.ca/gov/admin/disclaimer.page">Disclaimer</a></li>
-                    <li role="menuitem"><a id="footerPrivacy" href="https://www2.gov.bc.ca/gov/content/home/privacy">Privacy</a></li>
-                    <li role="menuitem"><a id="footerAccessibility" href="https://www2.gov.bc.ca/gov/admin/accessibility.page">Accessibility</a></li>
-                    <li role="menuitem"><a id="footerCopyright" href="https://www2.gov.bc.ca/gov/admin/copyright.page">Copyright</a></li>
-                    <li role="menuitem"><a id="footerContact" href="/contact">Contact Us</a></li>
+                    @foreach (var link in footer.MoreInfoLinks)
+                    {
+                        <li role="menuitem"><a id="@link.Id" href="@link.Url">@link.Text</a></li>
+                    }
                 </ul>
             </div>
             
@@ -383,7 +402,7 @@
         </div>
         <div class="container-xl bottom">
             <div class="copyright">
-                © <!-- -->2026<!-- --> Government of British Columbia
+                © <!-- -->@footerYear<!-- --> @footer.CopyrightHolder
             </div>
         </div>
         
