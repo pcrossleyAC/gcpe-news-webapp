@@ -14,7 +14,8 @@ public sealed record LinkListView(
     IReadOnlyList<LinkSetting> Links,
     SettingsEditorModel Page,
     bool Reorderable = true,
-    string? Hint = null)
+    string? Hint = null,
+    bool ShowSummary = false)
 {
     public IEnumerable<string> ErrorsFor(string field) => Page.ErrorsFor(field);
 }

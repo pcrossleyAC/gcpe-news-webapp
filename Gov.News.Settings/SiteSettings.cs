@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace Gov.News.Settings;
 
@@ -9,7 +10,10 @@ namespace Gov.News.Settings;
 /// </summary>
 public sealed class SiteSettings
 {
-    public int SchemaVersion { get; set; } = 1;
+    /// <summary>2: social links became per-network featured + accounts lists.</summary>
+    public const int CurrentSchemaVersion = 2;
+
+    public int SchemaVersion { get; set; } = CurrentSchemaVersion;
     public int Revision { get; set; }
     public DateTimeOffset? PublishedAt { get; set; }
     public string? PublishedBy { get; set; }
@@ -22,9 +26,20 @@ public sealed class SiteSettings
 
     public static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web) { WriteIndented = true };
 
-    public static SiteSettings FromJson(string json) =>
-        JsonSerializer.Deserialize<SiteSettings>(json, JsonOptions)
-        ?? throw new JsonException("Settings document is empty.");
+    public static SiteSettings FromJson(string json)
+    {
+        var node = JsonNode.Parse(json) as JsonObject ?? throw new JsonException("Settings document is empty.");
+        var version = node["schemaVersion"]?.GetValue<int>() ?? 1;
+        if (version < 2)
+            node.Remove("connect"); // version 1 social lists were never used; take the defaults below
+        var settings = node.Deserialize<SiteSettings>(JsonOptions) ?? throw new JsonException("Settings document is empty.");
+        if (version < 2)
+        {
+            settings.Connect = DefaultsDocument().Connect;
+            settings.SchemaVersion = CurrentSchemaVersion;
+        }
+        return settings;
+    }
 
     public string ToJson() => JsonSerializer.Serialize(this, JsonOptions);
 
@@ -43,7 +58,9 @@ public sealed class SiteSettings
     }
 
     /// <summary>The values the site shipped with, used when no settings have been published.</summary>
-    public static SiteSettings Defaults()
+    public static SiteSettings Defaults() => DefaultsDocument();
+
+    private static SiteSettings DefaultsDocument()
     {
         using var stream = typeof(SiteSettings).Assembly.GetManifestResourceStream("Gov.News.Settings.defaults.json")
             ?? throw new InvalidOperationException("defaults.json is not embedded in Gov.News.Settings.");
@@ -102,12 +119,40 @@ public sealed class FooterSettings
     public string CopyrightHolder { get; set; } = "";
 }
 
+/// <summary>The accounts listed on the public Connect page, network by network. RSS feeds are generated, not listed here.</summary>
 public sealed class ConnectSettings
 {
-    public List<LinkSetting> Facebook { get; set; } = [];
-    public List<LinkSetting> X { get; set; } = [];
-    public List<LinkSetting> Instagram { get; set; } = [];
-    public List<LinkSetting> Youtube { get; set; } = [];
+    public SocialNetworkLinks Facebook { get; set; } = new();
+    public SocialNetworkLinks X { get; set; } = new();
+    public SocialNetworkLinks Instagram { get; set; } = new();
+    public SocialNetworkLinks Threads { get; set; } = new();
+    public SocialNetworkLinks Bluesky { get; set; } = new();
+    public SocialNetworkLinks Flickr { get; set; } = new();
+    public SocialNetworkLinks Youtube { get; set; } = new();
+    public SocialNetworkLinks Blogs { get; set; } = new();
+
+    /// <summary>Every network with its JSON key and display name, in Connect page order.</summary>
+    public IEnumerable<(string Key, string Name, SocialNetworkLinks Links)> Networks()
+    {
+        yield return ("facebook", "Facebook", Facebook);
+        yield return ("x", "X", X);
+        yield return ("instagram", "Instagram", Instagram);
+        yield return ("threads", "Threads", Threads);
+        yield return ("bluesky", "Bluesky", Bluesky);
+        yield return ("flickr", "Flickr", Flickr);
+        yield return ("youtube", "YouTube", Youtube);
+        yield return ("blogs", "Blogs", Blogs);
+    }
+}
+
+public sealed class SocialNetworkLinks
+{
+    /// <summary>Shown first, in this order (e.g. the main government account).</summary>
+    public List<LinkSetting> Featured { get; set; } = [];
+    /// <summary>Shown after the featured accounts, sorted by name.</summary>
+    public List<LinkSetting> Accounts { get; set; } = [];
+
+    public IEnumerable<LinkSetting> InDisplayOrder() => Featured.Concat(Accounts.OrderBy(a => a.Text));
 }
 
 public sealed class LinkSetting
@@ -121,5 +166,9 @@ public sealed class LinkSetting
     [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
     public string? Id { get; set; }
 
-    public LinkSetting Copy() => new() { Text = Text, Url = Url, Id = Id };
+    /// <summary>Optional one-line description, shown next to social accounts.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public string? Summary { get; set; }
+
+    public LinkSetting Copy() => new() { Text = Text, Url = Url, Id = Id, Summary = Summary };
 }

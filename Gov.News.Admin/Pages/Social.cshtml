@@ -1,0 +1,44 @@
+@page
+@model SocialModel
+@{
+    ViewData["Title"] = "Social links";
+}
+
+<h1>Social links</h1>
+<p class="text-secondary">The accounts listed on the public <a href="https://news.gov.bc.ca/connect">Connect</a> page. RSS feeds are listed automatically and aren't edited here.</p>
+
+<partial name="_EditorMessages" model="Model" />
+
+<nav aria-label="Social network" class="mb-3">
+    <ul class="nav nav-tabs flex-wrap">
+        @foreach (var (key, name, links) in Model.Current.Connect.Networks())
+        {
+            <li class="nav-item">
+                <a class="nav-link @(key == Model.Network ? "active" : "")" aria-current="@(key == Model.Network ? "page" : null)"
+                   asp-page="/Social" asp-route-network="@key">@name <span class="text-secondary small">@(links.Featured.Count + links.Accounts.Count)</span></a>
+            </li>
+        }
+    </ul>
+    <p class="form-text">Save a draft before switching networks; unsaved edits on this tab are lost when you switch.</p>
+</nav>
+
+<form method="post" id="settings-form" novalidate>
+    <input type="hidden" asp-for="BaseETag" />
+    <input type="hidden" asp-for="Network" />
+
+    <section class="card mb-4">
+        <div class="card-body">
+            <h2 class="h5">@Model.NetworkName · featured</h2>
+            <partial name="_LinkList" model="@(new LinkListView("Shown first, in this order", nameof(SocialInput.Featured), "Input.Featured", $"connect.{Model.Network}.featured", Model.Input.Featured, Model, ShowSummary: true))" />
+        </div>
+    </section>
+
+    <section class="card mb-4">
+        <div class="card-body">
+            <h2 class="h5">@Model.NetworkName · other accounts</h2>
+            <partial name="_LinkList" model="@(new LinkListView("Listed after the featured accounts", nameof(SocialInput.Accounts), "Input.Accounts", $"connect.{Model.Network}.accounts", Model.Input.Accounts, Model, Reorderable: false, Hint: "These are sorted by name automatically.", ShowSummary: true))" />
+        </div>
+    </section>
+
+    <partial name="_PublishBar" model="Model" />
+</form>

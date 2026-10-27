@@ -15,6 +15,7 @@ public static partial class SettingsValidator
 {
     public const double MinimumContrast = 4.5; // WCAG 2.x AA, normal text
     public const int MaxFooterHelpTextLength = 200;
+    public const int MaxSummaryLength = 200;
 
     public static readonly IReadOnlySet<string> BannerStyles = new HashSet<string> { "info", "emergency" };
     public static readonly IReadOnlySet<string> BridgeLogoModes = new HashSet<string> { "auto", "on", "off" };
@@ -34,10 +35,11 @@ public static partial class SettingsValidator
             errors.Add(new("footer.helpText", $"Keep the help text to {MaxFooterHelpTextLength} characters or fewer."));
         if (settings.Footer.HelpText.Contains('<') || settings.Footer.HelpText.Contains('>'))
             errors.Add(new("footer.helpText", "Use plain text."));
-        ValidateLinks("connect.facebook", settings.Connect.Facebook, errors);
-        ValidateLinks("connect.x", settings.Connect.X, errors);
-        ValidateLinks("connect.instagram", settings.Connect.Instagram, errors);
-        ValidateLinks("connect.youtube", settings.Connect.Youtube, errors);
+        foreach (var (key, _, links) in settings.Connect.Networks())
+        {
+            ValidateLinks($"connect.{key}.featured", links.Featured, errors);
+            ValidateLinks($"connect.{key}.accounts", links.Accounts, errors);
+        }
         return errors;
     }
 
@@ -109,6 +111,8 @@ public static partial class SettingsValidator
                 errors.Add(new($"{field}[{i}].text", "Enter the link text."));
             if (!IsSafeUrl(link.Url))
                 errors.Add(new($"{field}[{i}].url", "Must start with https:// or / (a page on this site)."));
+            if (link.Summary is not null && (link.Summary.Length > MaxSummaryLength || link.Summary.Contains('<') || link.Summary.Contains('>')))
+                errors.Add(new($"{field}[{i}].summary", $"Use plain text, {MaxSummaryLength} characters or fewer."));
             if (link.Id is not null && !HtmlId().IsMatch(link.Id))
                 errors.Add(new($"{field}[{i}].id", "Link id must start with a letter and use only letters, digits, - or _."));
         }

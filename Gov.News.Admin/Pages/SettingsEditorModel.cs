@@ -35,6 +35,9 @@ public abstract class SettingsEditorModel(BlobSiteSettingsStore store) : PageMod
     protected abstract string ErrorPrefix { get; }
     protected abstract void LoadInput(SiteSettings source);
     protected abstract void ApplyInput(SiteSettings document);
+    /// <summary>Route values kept when the page redirects to itself (e.g. which social network is open).</summary>
+    protected virtual object? RouteValues => null;
+
     /// <summary>The editable link list called <paramref name="key"/> in the form, if this screen has one.</summary>
     protected virtual List<LinkSetting>? LinkList(string key) => null;
 
@@ -53,7 +56,7 @@ public abstract class SettingsEditorModel(BlobSiteSettingsStore store) : PageMod
         if (Errors.Count == 0)
         {
             StatusMessage = "Draft saved. It isn't live until you publish.";
-            return RedirectToPage();
+            return RedirectToPage(RouteValues);
         }
         StatusMessage = "Draft saved, but it has problems to fix before it can be published.";
         await LoadContextAsync(ct);
@@ -69,7 +72,7 @@ public abstract class SettingsEditorModel(BlobSiteSettingsStore store) : PageMod
         {
             case PublishStatus.Published:
                 StatusMessage = $"Published revision {result.Live!.Settings.Revision}. Visitors see it within two minutes.";
-                return RedirectToPage();
+                return RedirectToPage(RouteValues);
             case PublishStatus.Conflict:
                 ConflictLive = result.Live?.Settings;
                 ConflictSections = ConflictLive is null ? [] : SiteSettings.DifferingSections(document, ConflictLive);
@@ -100,14 +103,14 @@ public abstract class SettingsEditorModel(BlobSiteSettingsStore store) : PageMod
             : SiteSettings.DifferingSections(oldDraft, live.Settings).Where(s => s != SectionName).ToList();
         StatusMessage = $"Your {SectionName.ToLowerInvariant()} changes now build on revision {live?.Settings.Revision ?? 0}. Check them, then publish."
             + (dropped.Count > 0 ? $" Unpublished changes to {string.Join(", ", dropped)} were set aside." : "");
-        return RedirectToPage();
+        return RedirectToPage(RouteValues);
     }
 
     public async Task<IActionResult> OnPostDiscardAsync(CancellationToken ct)
     {
         await store.DiscardDraftAsync(CurrentUser(), ct);
         StatusMessage = "Draft discarded. Showing what is live.";
-        return RedirectToPage();
+        return RedirectToPage(RouteValues);
     }
 
     public Task<IActionResult> OnPostAddLinkAsync(string list, CancellationToken ct) =>
@@ -175,6 +178,12 @@ public abstract class SettingsEditorModel(BlobSiteSettingsStore store) : PageMod
     /// <summary>Drops rows with neither text nor address, trims the rest, and keeps any fixed id.</summary>
     protected static List<LinkSetting> CleanLinks(IEnumerable<LinkSetting> links) => links
         .Where(l => !string.IsNullOrWhiteSpace(l.Text) || !string.IsNullOrWhiteSpace(l.Url))
-        .Select(l => new LinkSetting { Text = (l.Text ?? "").Trim(), Url = (l.Url ?? "").Trim(), Id = string.IsNullOrWhiteSpace(l.Id) ? null : l.Id })
+        .Select(l => new LinkSetting
+        {
+            Text = (l.Text ?? "").Trim(),
+            Url = (l.Url ?? "").Trim(),
+            Id = string.IsNullOrWhiteSpace(l.Id) ? null : l.Id,
+            Summary = string.IsNullOrWhiteSpace(l.Summary) ? null : l.Summary.Trim(),
+        })
         .ToList();
 }

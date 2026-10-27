@@ -134,3 +134,43 @@ public class SettingsValidatorTests
         Assert.False(banner.IsVisibleAt(start.AddDays(1)));
     }
 }
+
+public class SchemaUpgradeTests
+{
+    [Fact]
+    public void Version_1_document_keeps_its_content_and_gets_the_default_social_links()
+    {
+        // Shape published by the first admin builds: social lists were flat arrays and unused.
+        var v1 = SiteSettings.Defaults();
+        v1.Banner.Message = "Published under version 1";
+        var json = System.Text.Json.Nodes.JsonNode.Parse(v1.ToJson())!.AsObject();
+        json["schemaVersion"] = 1;
+        json["connect"] = System.Text.Json.Nodes.JsonNode.Parse("""{"facebook":[],"x":[],"instagram":[],"youtube":[]}""");
+
+        var upgraded = SiteSettings.FromJson(json.ToJsonString());
+
+        Assert.Equal(SiteSettings.CurrentSchemaVersion, upgraded.SchemaVersion);
+        Assert.Equal("Published under version 1", upgraded.Banner.Message);
+        Assert.Equal("Government of British Columbia", upgraded.Connect.Facebook.Featured[0].Text);
+        Assert.Empty(SettingsValidator.Validate(upgraded));
+    }
+
+    [Fact]
+    public void Default_social_links_match_the_lists_that_were_in_the_code()
+    {
+        var connect = SiteSettings.Defaults().Connect;
+        Assert.Equal(83, connect.Networks().Sum(n => n.Links.Featured.Count + n.Links.Accounts.Count));
+        Assert.Equal(["Government of British Columbia", "Government of British Columbia Chinese (卑詩省政府中文官方帳號)"],
+            connect.Facebook.Featured.Select(l => l.Text));
+        Assert.Equal("@BCGovNews", connect.X.InDisplayOrder().First().Text);
+        Assert.Equal("Read daily news tweets from the Government of British Columbia", connect.X.Featured[0].Summary);
+    }
+
+    [Fact]
+    public void Social_summary_cannot_contain_markup()
+    {
+        var settings = SiteSettings.Defaults();
+        settings.Connect.X.Accounts[0].Summary = "<script>alert(1)</script>";
+        Assert.Contains(SettingsValidator.Validate(settings), e => e.Field == "connect.x.accounts[0].summary");
+    }
+}
