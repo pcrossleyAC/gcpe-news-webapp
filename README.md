@@ -85,7 +85,7 @@ Azure Blob container (`site-settings`), edited through **Gov.News.Admin**:
 
 - `live.json` is what the public site reads (cached for 60 seconds; falls back to the last
   good copy, then to `Gov.News.Settings/defaults.json`)
-- `draft.json` is the admin's work in progress
+- `drafts/<editor>.json` holds each editor's own unpublished changes
 - `history/NNNNNN.json` keeps every published revision for restore
 
 Publishing is guarded by blob ETags, so two editors can't overwrite each other.
@@ -109,3 +109,13 @@ and are skipped if it isn't running:
 
     docker run -d -p 10000:10000 mcr.microsoft.com/azure-storage/azurite azurite-blob --blobHost 0.0.0.0
     dotnet test Gov.News.sln
+
+**Trying the admin locally without Entra**
+
+With Azurite running, this signs every request in as the given user. It only works when
+`ASPNETCORE_ENVIRONMENT=Development`; in any other environment the setting is ignored.
+
+    ASPNETCORE_ENVIRONMENT=Development DevSignIn__User=you@gov.bc.ca \
+    SiteSettings__ConnectionString=UseDevelopmentStorage=true \
+    AzureAd__TenantId=organizations AzureAd__ClientId=00000000-0000-0000-0000-000000000000 \
+    dotnet run --project Gov.News.Admin --no-launch-profile

@@ -1,5 +1,6 @@
 using Azure.Identity;
 using Azure.Storage.Blobs;
+using Gov.News.Admin;
 using Gov.News.Settings;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -14,6 +15,10 @@ var builder = WebApplication.CreateBuilder(args);
 // on the enterprise app and assign the editors' group.
 builder.Services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
     .AddMicrosoftIdentityWebApp(builder.Configuration.GetSection("AzureAd"));
+
+var devSignIn = DevSignIn.IsEnabled(builder);
+if (devSignIn)
+    DevSignIn.Add(builder);
 
 // Every page requires a signed-in user unless it opts out with [AllowAnonymous].
 builder.Services.AddAuthorization(options => options.FallbackPolicy = options.DefaultPolicy);
@@ -51,6 +56,13 @@ builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
+// Locally (Azurite) create the container on first run; in Azure it is created in the portal.
+if (app.Environment.IsDevelopment())
+    app.Services.GetRequiredService<BlobContainerClient>().CreateIfNotExists();
+
+if (devSignIn)
+    app.Logger.LogWarning("DEV SIGN-IN IS ON: every request is signed in as {User}. Never use this outside your own machine.", builder.Configuration["DevSignIn:User"]);
+
 app.UseForwardedHeaders();
 
 if (!app.Environment.IsDevelopment())
@@ -70,3 +82,6 @@ app.MapRazorPages()
 app.MapControllers();
 
 app.Run();
+
+// Lets Gov.News.Admin.Tests start the app with WebApplicationFactory<Program>.
+public partial class Program;

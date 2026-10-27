@@ -29,3 +29,36 @@ body {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
   text-align: start;
 }
+.navbar {
+  border-bottom: 4px solid #FCBA19 !important;
+}
+
+.banner-preview {
+  color: #FFFFFF;
+  padding: 1rem 1.25rem;
+  line-height: 1.5;
+}
+
+#banner-preview-text {
+  white-space: pre-line;
+}
+
+.banner-preview-link {
+  font-weight: 700;
+  text-decoration: underline;
+  margin-left: 0.5rem;
+}
+
+.banner-mode {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.banner-mode-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}

@@ -28,6 +28,20 @@ public sealed class SiteSettings
 
     public string ToJson() => JsonSerializer.Serialize(this, JsonOptions);
 
+    /// <summary>Names of the sections whose content differs between two documents, ignoring revision metadata.</summary>
+    public static IReadOnlyList<string> DifferingSections(SiteSettings a, SiteSettings b)
+    {
+        static string Json(object section) => JsonSerializer.Serialize(section, JsonOptions);
+        var sections = new (string Name, object A, object B)[]
+        {
+            ("Banner", a.Banner, b.Banner),
+            ("Theme", a.Theme, b.Theme),
+            ("Footer", a.Footer, b.Footer),
+            ("Social links", a.Connect, b.Connect),
+        };
+        return sections.Where(s => Json(s.A) != Json(s.B)).Select(s => s.Name).ToList();
+    }
+
     /// <summary>The values the site shipped with, used when no settings have been published.</summary>
     public static SiteSettings Defaults()
     {

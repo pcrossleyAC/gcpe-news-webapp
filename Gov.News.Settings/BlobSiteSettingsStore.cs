@@ -8,6 +8,12 @@ namespace Gov.News.Settings;
 /// <summary>A settings document and the blob ETag it was read with.</summary>
 public sealed record StoredSettings(SiteSettings Settings, string ETag);
 
+/// <summary>
+/// Work in progress, and the ETag of the live settings it was started from
+/// (null if nothing was live). Publishing uses that ETag to detect someone else's publish.
+/// </summary>
+public sealed record DraftSettings(SiteSettings Settings, string? BaseLiveETag);
+
 public enum PublishStatus { Published, Conflict, Invalid, NotFound }
 
 /// <summary>
@@ -28,7 +34,7 @@ public sealed record HistoryEntry(int Revision, DateTimeOffset? PublishedAt, str
 /// Read/write access to site settings in one Azure Blob container, laid out as:
 /// <code>
 /// live.json            what the public site reads
-/// draft.json           work in progress in the admin
+/// drafts/{user}.json   each editor's own work in progress
 /// history/000042.json  a copy of every published revision
 /// </code>
 /// Blob ETags stand in for database transactions: a publish only lands if <c>live.json</c>
@@ -37,8 +43,9 @@ public sealed record HistoryEntry(int Revision, DateTimeOffset? PublishedAt, str
 public sealed class BlobSiteSettingsStore
 {
     public const string LiveBlobName = "live.json";
-    public const string DraftBlobName = "draft.json";
+    public const string DraftPrefix = "drafts/";
     public const string HistoryPrefix = "history/";
+    private const string BaseLiveETagKey = "baseLiveETag";
 
     private readonly BlobContainerClient _container;
     private readonly TimeProvider _time;
@@ -51,13 +58,28 @@ public sealed class BlobSiteSettingsStore
 
     public Task<StoredSettings?> GetLiveAsync(CancellationToken ct = default) => ReadAsync(LiveBlobName, ct);
 
-    public Task<StoredSettings?> GetDraftAsync(CancellationToken ct = default) => ReadAsync(DraftBlobName, ct);
+    /// <summary>The editor's own unpublished changes, if any. Each editor has a separate draft.</summary>
+    public async Task<DraftSettings?> GetDraftAsync(string editor, CancellationToken ct = default)
+    {
+        try
+        {
+            var result = await _container.GetBlobClient(DraftBlobName(editor)).DownloadContentAsync(ct);
+            result.Value.Details.Metadata.TryGetValue(BaseLiveETagKey, out var baseETag);
+            return new DraftSettings(SiteSettings.FromJson(result.Value.Content.ToString()), string.IsNullOrEmpty(baseETag) ? null : baseETag);
+        }
+        catch (RequestFailedException ex) when (ex.Status == (int)HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+    }
 
-    public async Task SaveDraftAsync(SiteSettings draft, CancellationToken ct = default) =>
-        await WriteAsync(_container.GetBlobClient(DraftBlobName), draft, conditions: null, metadata: null, ct);
+    /// <param name="baseLiveETag">ETag of the live settings this draft builds on, or null if nothing is live.</param>
+    public async Task SaveDraftAsync(string editor, SiteSettings draft, string? baseLiveETag, CancellationToken ct = default) =>
+        await WriteAsync(_container.GetBlobClient(DraftBlobName(editor)), draft, conditions: null,
+            new Dictionary<string, string> { [BaseLiveETagKey] = baseLiveETag ?? "" }, ct);
 
-    public async Task DiscardDraftAsync(CancellationToken ct = default) =>
-        await _container.GetBlobClient(DraftBlobName).DeleteIfExistsAsync(cancellationToken: ct);
+    public async Task DiscardDraftAsync(string editor, CancellationToken ct = default) =>
+        await _container.GetBlobClient(DraftBlobName(editor)).DeleteIfExistsAsync(cancellationToken: ct);
 
     /// <summary>
     /// Validates <paramref name="draft"/> and makes it live as the next revision.
@@ -103,7 +125,7 @@ public sealed class BlobSiteSettingsStore
         try
         {
             var info = await WriteAsync(_container.GetBlobClient(LiveBlobName), next, liveConditions, metadata: null, ct);
-            await DiscardDraftAsync(ct);
+            await DiscardDraftAsync(publishedBy, ct); // only the publisher's draft; other editors keep theirs
             return PublishResult.Published(new StoredSettings(next, info.ETag.ToString()));
         }
         catch (RequestFailedException ex) when (IsConditionFailure(ex))
@@ -144,6 +166,9 @@ public sealed class BlobSiteSettingsStore
     }
 
     public static string HistoryBlobName(int revision) => $"{HistoryPrefix}{revision:D6}.json";
+
+    public static string DraftBlobName(string editor) =>
+        $"{DraftPrefix}{Uri.EscapeDataString(editor.Trim().ToLowerInvariant())}.json";
 
     private async Task<StoredSettings?> ReadAsync(string blobName, CancellationToken ct)
     {
