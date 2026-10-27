@@ -50,7 +50,7 @@
     .mini-search-container-trigger,
     .mini-menu-container-trigger {
         border-color: transparent !important;
-        color: #2d2d2d !important;
+        color: var(--theme-text, #2D2D2D) !important;
         background-color: transparent !important;
         margin-bottom: 0;
     }
@@ -220,7 +220,7 @@
         #mini-menu-container ul li a,
         #mini-menu .site-menu ul li a {
             display: inline-block;
-            color: #2d2d2d;
+            color: var(--theme-text, #2D2D2D);
             font-size: 18px;
             text-decoration: none;
             padding: 8px 20px 7px;

@@ -17,13 +17,10 @@
     "colors": {
       "primary": "#013366",
       "text": "#2D2D2D",
-      "link": "#255A90",
+      "link": "#003366",
       "bannerInfo": "#013366",
-      "bannerEmergency": "#CE3E39",
-      "bannerSuccess": "#42814A",
-      "warning": "#F8BB47",
-      "footerBackground": "#F2F2F2",
-      "border": "#E2E2E2"
+      "bannerEmergency": "#D8292F",
+      "footerBackground": "#FFFFFF"
     },
     "fontFamily": "BCSans",
     "bridgeLogo": "auto"

@@ -138,7 +138,7 @@ public class SettingsValidatorTests
 public class SchemaUpgradeTests
 {
     [Fact]
-    public void Version_1_document_keeps_its_content_and_gets_the_default_social_links()
+    public void Version_1_document_keeps_its_content_and_gets_the_default_social_links_and_theme()
     {
         // Shape published by the first admin builds: social lists were flat arrays and unused.
         var v1 = SiteSettings.Defaults();
@@ -146,12 +146,14 @@ public class SchemaUpgradeTests
         var json = System.Text.Json.Nodes.JsonNode.Parse(v1.ToJson())!.AsObject();
         json["schemaVersion"] = 1;
         json["connect"] = System.Text.Json.Nodes.JsonNode.Parse("""{"facebook":[],"x":[],"instagram":[],"youtube":[]}""");
+        json["theme"]!["colors"]!["link"] = "#255A90"; // version 1 sample value, never applied to the site
 
         var upgraded = SiteSettings.FromJson(json.ToJsonString());
 
         Assert.Equal(SiteSettings.CurrentSchemaVersion, upgraded.SchemaVersion);
         Assert.Equal("Published under version 1", upgraded.Banner.Message);
         Assert.Equal("Government of British Columbia", upgraded.Connect.Facebook.Featured[0].Text);
+        Assert.Equal("#003366", upgraded.Theme.Colors.Link);
         Assert.Empty(SettingsValidator.Validate(upgraded));
     }
 

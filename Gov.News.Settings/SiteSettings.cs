@@ -10,7 +10,10 @@ namespace Gov.News.Settings;
 /// </summary>
 public sealed class SiteSettings
 {
-    /// <summary>2: social links became per-network featured + accounts lists.</summary>
+    /// <summary>
+    /// 2: social links became per-network featured + accounts lists, and the theme was wired to the
+    /// public stylesheets. Neither had any effect in version 1, so upgrading takes the defaults for both.
+    /// </summary>
     public const int CurrentSchemaVersion = 2;
 
     public int SchemaVersion { get; set; } = CurrentSchemaVersion;
@@ -31,11 +34,13 @@ public sealed class SiteSettings
         var node = JsonNode.Parse(json) as JsonObject ?? throw new JsonException("Settings document is empty.");
         var version = node["schemaVersion"]?.GetValue<int>() ?? 1;
         if (version < 2)
-            node.Remove("connect"); // version 1 social lists were never used; take the defaults below
+            node.Remove("connect"); // version 1 social lists and theme were never used; take the defaults below
         var settings = node.Deserialize<SiteSettings>(JsonOptions) ?? throw new JsonException("Settings document is empty.");
         if (version < 2)
         {
-            settings.Connect = DefaultsDocument().Connect;
+            var defaults = DefaultsDocument();
+            settings.Connect = defaults.Connect;
+            settings.Theme = defaults.Theme;
             settings.SchemaVersion = CurrentSchemaVersion;
         }
         return settings;
@@ -95,17 +100,22 @@ public sealed class ThemeSettings
     public string BridgeLogo { get; set; } = "auto";
 }
 
+/// <summary>
+/// Colours the public stylesheets read as CSS variables (see _Layout). Defaults are the site's
+/// existing colours, so an unchanged theme renders exactly as before.
+/// </summary>
 public sealed class ThemeColors
 {
+    /// <summary>--primary-blue: buttons, rules and the default banner.</summary>
     public string Primary { get; set; } = "#013366";
+    /// <summary>--theme-text: body text (#2D2D2D throughout the stylesheets).</summary>
     public string Text { get; set; } = "#2D2D2D";
-    public string Link { get; set; } = "#255A90";
+    /// <summary>--theme-link: links, e.g. the ministry name above headlines (#003366 throughout the stylesheets).</summary>
+    public string Link { get; set; } = "#003366";
     public string BannerInfo { get; set; } = "#013366";
-    public string BannerEmergency { get; set; } = "#CE3E39";
-    public string BannerSuccess { get; set; } = "#42814A";
-    public string Warning { get; set; } = "#F8BB47";
-    public string FooterBackground { get; set; } = "#F2F2F2";
-    public string Border { get; set; } = "#E2E2E2";
+    public string BannerEmergency { get; set; } = "#D8292F";
+    /// <summary>--theme-footer-background.</summary>
+    public string FooterBackground { get; set; } = "#FFFFFF";
 }
 
 public sealed class FooterSettings

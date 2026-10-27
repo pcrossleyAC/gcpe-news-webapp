@@ -5,8 +5,10 @@
 @inject Gov.News.Settings.ISiteSettingsSource SiteSettingsSource
 @model BaseViewModel
 @{
-    // Footer links and copyright come from published site settings (Gov.News.Admin), or the built-in defaults.
-    var footer = (await SiteSettingsSource.GetAsync()).Footer;
+    // Theme colours, footer links and copyright come from published site settings (Gov.News.Admin), or the built-in defaults.
+    var siteSettings = await SiteSettingsSource.GetAsync();
+    var footer = siteSettings.Footer;
+    var themeColors = siteSettings.Theme.Colors;
     var footerYear = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, TimeZoneConverter.TZConvert.GetTimeZoneInfo("America/Vancouver")).Year;
     var dob = new System.DateTime(1948, 11, 14);
     var now = DateTime.Now;
@@ -139,6 +141,16 @@
         <partial name="_WebAnalytics_Search" />
     }
 
+    @* After every stylesheet, so these win. Values are validated #RRGGBB colours. *@
+    <style id="site-theme">
+        :root {
+            --primary-blue: @themeColors.Primary;
+            --info-blue: @themeColors.Primary;
+            --theme-text: @themeColors.Text;
+            --theme-link: @themeColors.Link;
+            --theme-footer-background: @themeColors.FooterBackground;
+        }
+    </style>
 </head>
 <body>
     <!--googleoff: all-->

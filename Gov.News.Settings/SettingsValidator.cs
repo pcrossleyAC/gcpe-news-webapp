@@ -64,8 +64,7 @@ public static partial class SettingsValidator
         var colors = new (string Field, string Value)[]
         {
             ("primary", c.Primary), ("text", c.Text), ("link", c.Link), ("bannerInfo", c.BannerInfo),
-            ("bannerEmergency", c.BannerEmergency), ("bannerSuccess", c.BannerSuccess), ("warning", c.Warning),
-            ("footerBackground", c.FooterBackground), ("border", c.Border),
+            ("bannerEmergency", c.BannerEmergency), ("footerBackground", c.FooterBackground),
         };
         var allValid = true;
         foreach (var (field, value) in colors)
@@ -85,7 +84,6 @@ public static partial class SettingsValidator
             CheckContrast("theme.colors.link", c.Link, white, "on white", errors);
             CheckContrast("theme.colors.bannerInfo", c.BannerInfo, white, "behind white text", errors);
             CheckContrast("theme.colors.bannerEmergency", c.BannerEmergency, white, "behind white text", errors);
-            CheckContrast("theme.colors.bannerSuccess", c.BannerSuccess, white, "behind white text", errors);
             CheckContrast("theme.colors.footerBackground", c.FooterBackground, c.Text, "behind body text", errors);
         }
 

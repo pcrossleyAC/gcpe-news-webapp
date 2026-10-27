@@ -1,0 +1,71 @@
+@page
+@model ThemeModel
+@{
+    ViewData["Title"] = "Theme";
+    var c = Model.Input;
+}
+
+<h1>Theme</h1>
+<p class="text-secondary">Site colours. Each one is checked for readability as you pick it; a colour that is too faint can't be published.</p>
+
+<partial name="_EditorMessages" model="Model" />
+
+<form method="post" id="settings-form" novalidate>
+    <input type="hidden" asp-for="BaseETag" />
+
+    <div class="row g-4 mb-4">
+        <section class="col-lg-6">
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="h5">Colours</h2>
+                    @foreach (var (field, label, hint, against) in Model.Colours())
+                    {
+                        var value = Model.ValueOf(field);
+                        var jsonField = char.ToLowerInvariant(field[0]) + field[1..];
+                        var errors = Model.ErrorsFor($"theme.colors.{jsonField}").ToList();
+                        <div class="d-flex flex-wrap gap-3 align-items-center py-2 border-bottom theme-row" data-against="@against" data-against-field="@(field == nameof(ThemeColors.FooterBackground) ? "Input_Text" : "")">
+                            <input type="color" id="Input_@field" name="Input.@field" value="@value.ToLowerInvariant()" class="form-control form-control-color theme-color" aria-describedby="hint-@field badge-@field" />
+                            <label for="Input_@field" class="flex-grow-1">
+                                <span class="fw-bold d-block">@label</span>
+                                <span class="small text-secondary" id="hint-@field">@hint</span>
+                            </label>
+                            <code class="text-secondary theme-hex">@value</code>
+                            <span class="badge theme-badge" id="badge-@field" aria-live="polite"></span>
+                            @foreach (var message in errors)
+                            {
+                                <div class="w-100 text-danger small">@message</div>
+                            }
+                        </div>
+                    }
+                    <button type="submit" asp-page-handler="Reset" class="btn btn-outline-secondary mt-3">Reset to BC Gov defaults</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="col-lg-6" aria-labelledby="preview-heading">
+            <div class="card theme-preview">
+                <div class="card-header small fw-bold text-secondary" id="preview-heading">Preview</div>
+                <div class="p-3 d-flex justify-content-between align-items-center" data-preview="primary-border" style="border-bottom: 4px solid @c.Primary">
+                    <span class="fw-bold fs-5" data-preview="link-text" style="color: @c.Link">BC Gov News</span>
+                    <span class="small" data-preview="text" style="color: @c.Text">News · Subscribe</span>
+                </div>
+                <div class="px-3 py-2 small text-white" data-preview="banner-info" style="background-color: @c.BannerInfo">Information banner text looks like this.</div>
+                <div class="px-3 py-2 small text-white fw-medium" data-preview="banner-emergency" style="background-color: @c.BannerEmergency">Emergency banner text looks like this.</div>
+                <div class="p-3">
+                    <div class="small mb-1" data-preview="text" style="color: @c.Text">News release · October 27, 2026</div>
+                    <div class="small fw-bold mb-1" data-preview="link-text" style="color: @c.Link">[Ministry name]</div>
+                    <div class="fs-4 fw-bold mb-2" data-preview="text" style="color: @c.Text">[Headline of a news release]</div>
+                    <p class="mb-2" data-preview="text" style="color: @c.Text">[First sentence of the release in body text, with <span data-preview="link-text" style="color: @c.Link; text-decoration: underline">a link</span> in it.]</p>
+                    <span class="btn btn-sm text-white" data-preview="primary-bg" style="background-color: @c.Primary">Live Webcast</span>
+                </div>
+                <div class="p-3 small border-top" data-preview="footer" style="background-color: @c.FooterBackground; color: @c.Text">Disclaimer · Privacy · Accessibility · © Government of British Columbia</div>
+            </div>
+        </section>
+    </div>
+
+    <partial name="_PublishBar" model="Model" />
+</form>
+
+@section Scripts {
+    <script src="~/js/theme.js" asp-append-version="true"></script>
+}
