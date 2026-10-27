@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "revision": 0,
+  "publishedAt": null,
+  "publishedBy": null,
+  "note": "Built-in defaults",
+  "banner": {
+    "enabled": true,
+    "style": "info",
+    "message": "Due to the post-election period, this site is not being updated except for emerging public health and safety issues or statutory requirements.",
+    "links": [],
+    "dismissible": true,
+    "startsAt": null,
+    "endsAt": null
+  },
+  "theme": {
+    "colors": {
+      "primary": "#013366",
+      "text": "#2D2D2D",
+      "link": "#255A90",
+      "bannerInfo": "#013366",
+      "bannerEmergency": "#CE3E39",
+      "bannerSuccess": "#42814A",
+      "warning": "#F8BB47",
+      "footerBackground": "#F2F2F2",
+      "border": "#E2E2E2"
+    },
+    "fontFamily": "BCSans",
+    "bridgeLogo": "auto"
+  },
+  "footer": {
+    "helpLinks": [
+      {
+        "text": "Call, email or text us",
+        "url": "https://www2.gov.bc.ca/gov/content/home/get-help-with-government-services"
+      },
+      {
+        "text": "find a service centre",
+        "url": "https://www2.gov.bc.ca/gov/content/home/services-a-z"
+      }
+    ],
+    "connectLinks": [
+      {
+        "text": "Subscribe",
+        "url": "/subscribe"
+      },
+      {
+        "text": "Social and RSS",
+        "url": "/connect"
+      }
+    ],
+    "moreInfoLinks": [
+      {
+        "text": "BC Gov",
+        "url": "https://gov.bc.ca"
+      },
+      {
+        "text": "Disclaimer",
+        "url": "https://www2.gov.bc.ca/gov/admin/disclaimer.page"
+      },
+      {
+        "text": "Privacy",
+        "url": "https://www2.gov.bc.ca/gov/content/home/privacy"
+      },
+      {
+        "text": "Accessibility",
+        "url": "https://www2.gov.bc.ca/gov/admin/accessibility.page"
+      },
+      {
+        "text": "Copyright",
+        "url": "https://www2.gov.bc.ca/gov/admin/copyright.page"
+      },
+      {
+        "text": "Contact Us",
+        "url": "/contact"
+      }
+    ],
+    "copyrightHolder": "Government of British Columbia"
+  },
+  "connect": {
+    "facebook": [],
+    "x": [],
+    "instagram": [],
+    "youtube": []
+  }
+}

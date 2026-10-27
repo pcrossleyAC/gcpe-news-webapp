@@ -9,7 +9,11 @@ This is a C# application that provides a user interface for the BC Gov News webs
 Repository Map
 --------------
 - .s2i : Source to image bash assemble script
-- **Gov.News.WebApp**: C# Dotnet 5 MVC Frontend App
+- **Gov.News.WebApp**: C# .NET 10 MVC Frontend App (the public site)
+- **Gov.News.Admin**: Internal site-settings admin (Razor Pages, Entra ID sign-in). Not publicly routed.
+- **Gov.News.Settings**: Shared settings model, validation and Azure Blob storage, used by both apps
+- **Gov.News.Settings.Tests**: Tests for the settings library
+- Gov.News.sln: Solution containing all of the above
 - Dotnet-Snyk: Source for a Dotnet + Snyk container
 - Dotnet-Sonar: Source for a SonarQube scanner
 - functional-tests: BDD Tests
@@ -73,3 +77,35 @@ Maintenance
 
 This repository is maintained by [GCPE](http://www.gov.bc.ca/).
 Click [here](https://github.com/orgs/bcgov/teams/gcpe/repositories) for a complete list of our repositories on GitHub.
+
+Site settings
+-------------
+Banner, footer links, social links and theme colours live in one JSON document in an
+Azure Blob container (`site-settings`), edited through **Gov.News.Admin**:
+
+- `live.json` is what the public site reads (cached for 60 seconds; falls back to the last
+  good copy, then to `Gov.News.Settings/defaults.json`)
+- `draft.json` is the admin's work in progress
+- `history/NNNNNN.json` keeps every published revision for restore
+
+Publishing is guarded by blob ETags, so two editors can't overwrite each other.
+
+**Admin configuration** (environment variables)
+
+| Variable | Value |
+|---|---|
+| `AzureAd__TenantId`, `AzureAd__ClientId`, `AzureAd__ClientSecret` | The Entra ID app registration |
+| `SiteSettings__ServiceUri` | e.g. `https://<account>.blob.core.windows.net` |
+| `SiteSettings__Container` | Defaults to `site-settings` |
+
+In the Azure portal: add `https://<admin host>/signin-oidc` as a redirect URI, set
+**Assignment required** on the enterprise application and assign the editors' group, and give
+the app registration **Storage Blob Data Contributor** on the container.
+
+**Running the tests**
+
+The storage tests run against [Azurite](https://learn.microsoft.com/azure/storage/common/storage-use-azurite)
+and are skipped if it isn't running:
+
+    docker run -d -p 10000:10000 mcr.microsoft.com/azure-storage/azurite azurite-blob --blobHost 0.0.0.0
+    dotnet test Gov.News.sln
