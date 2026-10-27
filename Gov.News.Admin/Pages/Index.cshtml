@@ -1,0 +1,51 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Overview";
+    var settings = Model.Live?.Settings ?? Gov.News.Settings.SiteSettings.Defaults();
+}
+
+<h1>Site settings</h1>
+
+@if (Model.Live is null)
+{
+    <p>Nothing has been published yet. The public site is using its built-in defaults.</p>
+}
+else
+{
+    <p>Live: revision @settings.Revision, published by @settings.PublishedBy on @settings.PublishedAt?.ToString("MMM d, yyyy h:mm tt").</p>
+}
+
+<h2 class="h4 mt-4">Banner</h2>
+<p>
+    @(settings.Banner.Enabled ? (settings.Banner.Style == "emergency" ? "Emergency" : "Information") : "Off")
+    @if (settings.Banner.Enabled)
+    {
+        <text>: “@settings.Banner.Message”</text>
+    }
+</p>
+
+<h2 class="h4 mt-4">History</h2>
+@if (Model.History.Count == 0)
+{
+    <p>No revisions yet.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr><th scope="col">Revision</th><th scope="col">When</th><th scope="col">Who</th><th scope="col">Note</th></tr>
+        </thead>
+        <tbody>
+            @foreach (var entry in Model.History)
+            {
+                <tr>
+                    <td>@entry.Revision</td>
+                    <td>@entry.PublishedAt?.ToString("MMM d, yyyy h:mm tt")</td>
+                    <td>@entry.PublishedBy</td>
+                    <td>@entry.Note</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
